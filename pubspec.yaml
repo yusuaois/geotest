@@ -5,7 +5,7 @@ version: 1.0.0+1
 
 environment:
   # 既然你的 Dart 是 3.10.3，这里设置最低为 3.5.0 以确保兼容新库
-  sdk: '>=3.5.0 <4.0.0'
+  sdk: '>=3.3.0 <4.0.0'
 
 dependencies:
   flutter:
