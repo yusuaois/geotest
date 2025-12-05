@@ -1,17 +1,16 @@
 import 'package:latlong2/latlong.dart';
-import 'dart:math';
 
-// Haversine 公式实现距离计算
+// 定义距离计算器实例
 const Distance distance = Distance();
 
 class GeofenceCalculator {
-  // 计算两个 LatLng 点之间的距离 (米)
-  static double calculateDistance(
-      LatLng point1, LatLng point2) {
+  /// 计算两点之间的距离（米）
+  static double calculateDistance(LatLng point1, LatLng point2) {
     return distance(point1, point2);
   }
 
-  // 格式化距离字符串
+  /// 格式化距离显示
+  /// 小于1公里显示米，大于1公里显示公里
   static String formatDistance(double meters) {
     if (meters < 1000) {
       return '${meters.toStringAsFixed(0)} 米';
@@ -21,11 +20,10 @@ class GeofenceCalculator {
     }
   }
 
-  // 检查点是否在目标半径内
-  static bool isInRadius(
-      LatLng userLocation, LatLng targetLocation, double radiusMeters) {
+  /// 核心判定：用户是否进入目标半径
+  static bool isInRadius(LatLng userLocation, LatLng targetLocation, double radiusMeters) {
     final dist = calculateDistance(userLocation, targetLocation);
-    // 增加一点容错，例如 5 米
-    return dist <= radiusMeters + 5; 
+    // 增加 5 米的缓冲容错，避免边界抖动
+    return dist <= (radiusMeters + 5); 
   }
 }
