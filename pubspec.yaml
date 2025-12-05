@@ -3,9 +3,9 @@ description: A smart location reminder application based on OpenStreetMap.
 publish_to: 'none'
 version: 1.0.0+1
 
+# 匹配Flutter 3.27.4的Dart 3.3.4（放宽到3.3.0+，避免版本锁死）
 environment:
-  # 既然你的 Dart 是 3.10.3，这里设置最低为 3.5.0 以确保兼容新库
-  sdk: '>=3.5.0 <4.0.0'
+  sdk: '>=3.3.0 <4.0.0'
 
 dependencies:
   flutter:
@@ -13,56 +13,46 @@ dependencies:
   flutter_localizations:
     sdk: flutter
 
-  # --- 核心状态管理 ---
-  # Riverpod 运行时使用最新版
+  # 核心状态管理（运行时版本保留2.6.1，生成器降级到兼容版本）
   flutter_riverpod: ^2.6.1
   riverpod_annotation: ^2.6.1
 
-  # --- 地图与定位 ---
-  # 你选择了 7.0.2，添加 ^ 允许小版本修复
+  # 地图与定位（无冲突，保留）
   flutter_map: ^7.0.2
   latlong2: ^0.9.1
-  geolocator: ^13.0.0 # 建议使用 13.x，12.x 也兼容
+  geolocator: ^13.0.0
 
-  # --- 本地存储 ---
+  # 本地存储（无冲突，保留）
   hive: ^2.2.3
   hive_flutter: ^1.1.0
 
-  # --- 路由与通知 ---
+  # 路由与通知（无冲突，保留）
   go_router: ^14.6.2
   flutter_local_notifications: ^18.0.1
 
-  # --- 响应式 ---
+  # 响应式（无冲突，保留）
   rxdart: ^0.28.0
 
-  # --- UI与工具 ---
+  # UI与工具（关键修改：降级dynamic_color到兼容版本）
   uuid: ^4.5.1
   flutter_background_service: ^5.1.0
-  dynamic_color: ^1.7.0 # 修正为常见的稳定版，如果确实有 1.8+ 可改回
+  dynamic_color: ^1.6.8  # 1.6.x 兼容Flutter 3.27.4，无toARGB32错误
   file_picker: ^8.0.7
-  vibration: ^2.0.0 # 注意：vibration 3.x 版本可能有重大变动，如报错请降级到 1.9.0
-  intl: ^0.19.0 # 尝试使用 0.19，如果有冲突，下面的 overrides 会生效
+  vibration: ^2.0.0
+  intl: ^0.19.0
   permission_handler: ^11.3.1
   audioplayers: ^6.4.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-    
-  # 你的 Dart 版本很高，可以使用最新的 lints
-  flutter_lints: ^5.0.0
-
-  # --- 代码生成器 ---
+  # 降级flutter_lints到兼容Dart 3.3.4的版本（4.0.0要求≥3.3.0）
+  flutter_lints: ^4.0.0
+  # 代码生成器（关键：降级riverpod_generator到2.4.0，兼容hive_generator）
   build_runner: ^2.4.13
-  
-  # [关键冲突修复] 
-  # 必须锁定在 2.4.x 以兼容 Hive Generator (因为 analyzer 版本冲突)
   riverpod_generator: ^2.4.0
-  
   hive_generator: ^2.0.1
 
-# 强制统一 intl 版本，解决 localization 冲突
+# 强制统一intl版本（必须固定版本号，而非^动态版本）
 dependency_overrides:
-  intl: ^0.19.0
-  # 如果上面的 override 导致报错，请尝试改为:
-  # intl: 0.18.1
+  intl: 0.18.1
