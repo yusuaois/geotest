@@ -54,7 +54,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   # 升级 Lints
-  flutter_lints: ^6.0.0
+  flutter_lints: ^4.0.0
 
   # --- 代码生成器 ---
   build_runner: ^2.4.13
