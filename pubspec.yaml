@@ -34,7 +34,7 @@ dependencies:
   file_picker: ^8.0.0 # 选择音频文件
   vibration: ^1.9.0 # 震动控制
   # 工具
-  intl: 0.20.2 # 国际化
+  intl: 0.18.1 # 国际化
   permission_handler: ^11.3.0 # 权限管理
   audioplayers: ^6.0.0 # 播放铃声
 
