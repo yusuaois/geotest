@@ -16,7 +16,8 @@
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <service
-            android:name="id.flutter.flutter_background_service.BackgroundService"
+            android:name="flutterEmbedding"
+            android:value="2" 
             android:foregroundServiceType="location" 
             android:exported="true" 
         />
