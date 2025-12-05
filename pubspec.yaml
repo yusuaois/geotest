@@ -4,7 +4,7 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.2.0 <4.0.0'
+  sdk: '3.10.3'
 
 dependencies:
   flutter:
@@ -47,14 +47,14 @@ dependencies:
   # 升级 Vibration
   vibration: ^2.0.0
   intl: ^0.20.2
-  permission_handler: ^11.3.1
+  permission_handler: ^12.0.1
   audioplayers: ^6.0.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   # 升级 Lints
-  flutter_lints: ^4.0.0
+  flutter_lints: ^6.0.0
 
   # --- 代码生成器 ---
   build_runner: ^2.4.13
