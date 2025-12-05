@@ -12,42 +12,58 @@ dependencies:
   flutter_localizations:
     sdk: flutter
 
-  # 核心依赖
-  flutter_riverpod: ^2.5.1
-  flutter_map: ^6.1.0
-  latlong2: ^0.9.0
-  geolocator: ^11.0.0
+  # --- 核心状态管理与数据 ---
+  # 保持在 2.6.1 以配合 riverpod_generator 2.4.0 解决与 Hive 的冲突
+  flutter_riverpod: ^2.6.1
+  # 配合 2.6.1 使用
+  riverpod_annotation: ^2.6.1
+
+  # --- 地图与定位 ---
+  flutter_map: ^8.2.2
+  # Latlong2 保持最新
+  latlong2: ^0.9.1
+  # Geolocator 升级
+  geolocator: ^13.0.0
+
+  # --- 本地存储 ---
+  # Hive 2.x 保持不变 (注意：Hive Generator 是版本冲突的根源)
   hive: ^2.2.3
   hive_flutter: ^1.1.0
-  flutter_local_notifications: ^17.1.0
 
-  # 修复报错必须添加的依赖
-  go_router: ^13.2.0  # 路由库
-  rxdart: ^0.27.7     # 修复 startWith 方法缺失
+  # --- 路由与通知 ---
+  # 建议先升至 14.x 确保稳定，17.x 变动极大
+  go_router: ^14.6.0
+  flutter_local_notifications: ^18.0.1
 
-  # 其他
+  # --- 响应式编程 ---
+  rxdart: ^0.28.0
+
+  # --- UI与工具 ---
   uuid: ^4.3.3
-  riverpod_annotation: ^2.3.5
-  flutter_background_service: ^5.0.0 # 后台保活服务
-  # UI与主题
-  dynamic_color: ^1.6.8 # Material You 取色
-  file_picker: ^8.0.0 # 选择音频文件
-  vibration: ^1.9.0 # 震动控制
-  # 工具
-  intl: 0.18.1 # 国际化
-  permission_handler: ^11.3.0 # 权限管理
-  audioplayers: ^6.0.0 # 播放铃声
+  flutter_background_service: ^5.0.0
+  dynamic_color: ^1.6.8
+  # 升级 File Picker
+  file_picker: ^8.0.0
+  # 升级 Vibration
+  vibration: ^2.0.0
+  intl: ^0.20.2
+  permission_handler: ^12.0.1
+  audioplayers: ^6.0.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^3.0.0
-  build_runner: ^2.4.8
+  # 升级 Lints
+  flutter_lints: ^5.0.0
+
+  # --- 代码生成器 ---
+  build_runner: ^2.4.13
+  
+  # [关键修复]：必须锁定在 2.4.0 以兼容 Hive Generator
   riverpod_generator: ^2.4.0
+  
   hive_generator: ^2.0.1
 
-flutter:
-  uses-material-design: true
-  assets:
-    - assets/images/
-    - assets/audio/ # 预留给默认铃声
+# 某些情况下，如果仍有报错，可以尝试强制覆盖依赖 (可选)
+# dependency_overrides:
+#   analyzer: ^6.4.1
