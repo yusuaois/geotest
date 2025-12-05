@@ -75,7 +75,7 @@ class NotificationService {
       id,
       title,
       body,
-      NotificationDetails(
+      const NotificationDetails(
         android: AndroidNotificationDetails(
           channelIdAlert,
           '位置到达提醒',
@@ -83,7 +83,7 @@ class NotificationService {
           priority: Priority.high,
           fullScreenIntent: true, // 类似闹钟的全屏提醒
         ),
-        iOS: const DarwinNotificationDetails(
+        iOS: DarwinNotificationDetails(
           presentAlert: true,
           presentSound: true,
         ),

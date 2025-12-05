@@ -2,14 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:dynamic_color/dynamic_color.dart';
+import 'package:triggeo/data/repositories/reminder_repository.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/location_service.dart';
 import 'features/settings/theme_controller.dart';
+import 'app_router.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   await Hive.initFlutter();
+  await ReminderRepository.init();
 
   // 打开设置存储箱
   await Hive.openBox('settings_box');
@@ -58,7 +61,7 @@ class TriggeoApp extends ConsumerWidget { // 改为 ConsumerWidget 以监听 Riv
           );
         }
 
-        return MaterialApp(
+        return MaterialApp.router(
           title: 'Triggeo',
           debugShowCheckedModeBanner: false, // 移除调试标签
           
@@ -88,10 +91,7 @@ class TriggeoApp extends ConsumerWidget { // 改为 ConsumerWidget 以监听 Riv
           // 5. 决定当前显示模式
           themeMode: _getThemeMode(themeState.mode),
           
-          // 暂时指向一个占位页面
-          home: const Scaffold(
-            body: Center(child: Text("UI 准备就绪，下一步加载地图...")),
-          ),
+          routerConfig: router,
         );
       },
     );

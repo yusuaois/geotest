@@ -34,7 +34,7 @@ class SimpleSettingsCard extends ConsumerWidget {
                           child: CircleAvatar(
                             backgroundColor: color,
                             radius: 16,
-                            child: themeState.customSeedColor.value == color.value
+                            child: themeState.customSeedColor.toARGB32() == color.toARGB32()
                                 ? const Icon(Icons.check,
                                     color: Colors.white, size: 16)
                                 : null,

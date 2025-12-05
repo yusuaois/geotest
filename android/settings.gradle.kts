@@ -14,6 +14,13 @@ pluginManagement {
         google()
         mavenCentral()
         gradlePluginPortal()
+        maven("https://maven.aliyun.com/repository/public/") 
+        maven("https://maven.aliyun.com/repository/spring/") 
+        maven("https://maven.aliyun.com/repository/google/") 
+        maven("https://maven.aliyun.com/repository/gradle-plugin/") 
+        maven("https://maven.aliyun.com/repository/spring-plugin/") 
+        maven("https://maven.aliyun.com/repository/grails-core/") 
+        maven("https://maven.aliyun.com/repository/apache-snapshots/") 
     }
 }
 
