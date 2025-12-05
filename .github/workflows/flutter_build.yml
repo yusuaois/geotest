@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - main
+      - master
   # 也可以添加手动触发
   workflow_dispatch:
 
@@ -20,7 +21,7 @@ jobs:
         # 使用官方 action 来安装和配置 Flutter SDK
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.19.x' # 替换为你项目使用的 Flutter 版本
+          flutter-version: '3.22.0' # 替换为你项目使用的 Flutter 版本
           channel: 'stable'
 
       - name: 📦 Get Dependencies

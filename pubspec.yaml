@@ -1,11 +1,11 @@
 name: triggeo
 description: A smart location reminder application based on OpenStreetMap.
-publish_to: 'none'
+publish_to: "none"
 version: 1.0.0+1
 
 environment:
   # 既然你的 Dart 是 3.10.3，这里设置最低为 3.5.0 以确保兼容新库
-  sdk: '>=3.3.0 <4.0.0'
+  sdk: ">=3.3.0 <4.0.0"
 
 dependencies:
   flutter:
@@ -48,17 +48,17 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-    
+
   # 你的 Dart 版本很高，可以使用最新的 lints
   flutter_lints: ^5.0.0
 
   # --- 代码生成器 ---
   build_runner: ^2.4.13
-  
-  # [关键冲突修复] 
+
+  # [关键冲突修复]
   # 必须锁定在 2.4.x 以兼容 Hive Generator (因为 analyzer 版本冲突)
   riverpod_generator: ^2.4.0
-  
+
   hive_generator: ^2.0.1
 
 # 强制统一 intl 版本，解决 localization 冲突
