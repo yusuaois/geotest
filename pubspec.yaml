@@ -1,0 +1,53 @@
+name: triggeo
+description: A smart location reminder application based on OpenStreetMap.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # 状态管理
+  flutter_riverpod: ^2.5.1
+  riverpod_annotation: ^2.3.5
+
+  # 地图与位置
+  flutter_map: ^6.1.0 # OpenStreetMap 实现
+  latlong2: ^0.9.0
+  geolocator: ^11.0.0 # 获取位置
+  flutter_background_service: ^5.0.0 # 后台保活服务
+  
+  # 本地存储
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  
+  # UI与主题
+  dynamic_color: ^1.6.8 # Material You 取色
+  file_picker: ^8.0.0 # 选择音频文件
+  flutter_local_notifications: ^17.1.0 # 通知
+  vibration: ^1.9.0 # 震动控制
+  
+  # 工具
+  intl: 0.20.2 # 国际化
+  uuid: ^4.3.3 # 生成唯一ID
+  permission_handler: ^11.3.0 # 权限管理
+  audioplayers: ^6.0.0 # 播放铃声
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  build_runner: ^2.4.8
+  riverpod_generator: ^2.4.0
+  hive_generator: ^2.0.1
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/audio/ # 预留给默认铃声

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>我们需要您的位置来在地图上显示并在您到达目的地时提醒您。</string>
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>我们需要在后台访问您的位置，以便在应用关闭时也能检测您是否到达目的地并发送提醒。</string>
+    <key>NSLocationAlwaysUsageDescription</key>
+    <string>我们需要在后台访问您的位置，以便在应用关闭时也能检测您是否到达目的地并发送提醒。</string>
+    
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>location</string>
+        <string>fetch</string>
+        <string>audio</string> <string>processing</string>
+    </array>
+
+    <key>NSMicrophoneUsageDescription</key>
+    <string>用于录制自定义提醒音效（如果应用支持）。</string>
+    <key>NSAppleMusicUsageDescription</key>
+    <string>用于选择铃声文件。</string>
+</dict>
+</plist>
