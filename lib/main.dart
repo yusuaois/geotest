@@ -5,6 +5,7 @@ import 'package:dynamic_color/dynamic_color.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/location_service.dart';
 import 'features/settings/theme_controller.dart';
+import 'features/map/map_screen.dart'; // 引入新的地图屏幕
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -89,9 +90,7 @@ class TriggeoApp extends ConsumerWidget { // 改为 ConsumerWidget 以监听 Riv
           themeMode: _getThemeMode(themeState.mode),
           
           // 暂时指向一个占位页面
-          home: const Scaffold(
-            body: Center(child: Text("UI 准备就绪，下一步加载地图...")),
-          ),
+          home: const MapScreen(),
         );
       },
     );
