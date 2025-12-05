@@ -6,6 +6,9 @@ plugins {
 }
 
 android {
+    compileSdkVersion 33
+    ndkVersion flutter.ndkVersion
+
     namespace = "com.example.triggeo"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
