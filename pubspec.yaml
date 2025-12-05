@@ -14,7 +14,7 @@ dependencies:
 
   # --- 核心状态管理与数据 ---
   # 保持在 2.6.1 以配合 riverpod_generator 2.4.0 解决与 Hive 的冲突
-  flutter_riverpod: ^2.6.1
+  flutter_riverpod: 2.6.1
   # 配合 2.6.1 使用
   riverpod_annotation: ^2.6.1
 
@@ -23,7 +23,7 @@ dependencies:
   # Latlong2 保持最新
   latlong2: ^0.9.1
   # Geolocator 升级
-  geolocator: ^13.0.0
+  geolocator: ^14.0.2
 
   # --- 本地存储 ---
   # Hive 2.x 保持不变 (注意：Hive Generator 是版本冲突的根源)
@@ -32,8 +32,8 @@ dependencies:
 
   # --- 路由与通知 ---
   # 建议先升至 14.x 确保稳定，17.x 变动极大
-  go_router: ^14.6.0
-  flutter_local_notifications: ^18.0.1
+  go_router: ^17.0.0
+  flutter_local_notifications: ^19.5.0
 
   # --- 响应式编程 ---
   rxdart: ^0.28.0
@@ -54,7 +54,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   # 升级 Lints
-  flutter_lints: ^5.0.0
+  flutter_lints: ^6.0.0
 
   # --- 代码生成器 ---
   build_runner: ^2.4.13
