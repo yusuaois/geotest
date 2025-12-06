@@ -30,9 +30,4 @@ plugins {
     id("org.jetbrains.kotlin.android") version "2.2.20" apply false
 }
 
-android {
-    ndkVersion.set("27.0.12077973") // 注意这里使用 .set()
-    // ... 其他现有配置
-}
-
 include(":app")
