@@ -11,12 +11,12 @@ pluginManagement {
     includeBuild("$flutterSdkPath/packages/flutter_tools/gradle")
 
     repositories {
-        maven("https://jitpack.io")
-        maven("https://maven.aliyun.com/repository/release")
-        maven("https://maven.aliyun.com/repository/google")
-        maven("https://maven.aliyun.com/repository/central")
-        maven("https://maven.aliyun.com/repository/gradle-plugin")
-        maven("https://maven.aliyun.com/repository/public")
+        // maven("https://jitpack.io")
+        // maven("https://maven.aliyun.com/repository/release")
+        // maven("https://maven.aliyun.com/repository/google")
+        // maven("https://maven.aliyun.com/repository/central")
+        // maven("https://maven.aliyun.com/repository/gradle-plugin")
+        // maven("https://maven.aliyun.com/repository/public")
         maven("https://repo.huaweicloud.com/repository/maven/")
         google()
         mavenCentral()
@@ -28,6 +28,11 @@ plugins {
     id("dev.flutter.flutter-plugin-loader") version "1.0.0"
     id("com.android.application") version "8.11.1" apply false
     id("org.jetbrains.kotlin.android") version "2.2.20" apply false
+}
+
+android {
+    ndkVersion.set("27.0.12077973") // 注意这里使用 .set()
+    // ... 其他现有配置
 }
 
 include(":app")
