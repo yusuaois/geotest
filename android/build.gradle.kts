@@ -1,44 +1,45 @@
-buildscript {
-    // 1. 锁定Kotlin版本（兼容Gradle 7.5）
-    ext.kotlin_version = '1.8.0'
-    repositories {
-        google()
-        mavenCentral()
+// android/app/build.gradle.kts
+plugins {
+    id("com.android.application")
+    id("kotlin-android")
+    id("dev.flutter.flutter-gradle-plugin")
+}
+
+android {
+    compileSdk = 33 // Kotlin DSL用=赋值，而非Groovy的:
+    ndkVersion = flutter.ndkVersion
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
     }
 
-    dependencies {
-        // 2. 锁定AGP版本为7.4.2（与Gradle 7.5匹配）
-        classpath 'com.android.tools.build:gradle:7.4.2'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    kotlinOptions {
+        jvmTarget = "1.8" // 字符串用双引号
+    }
+
+    defaultConfig {
+        applicationId = "com.yourpackage.triggeo" // 替换为你的实际包名
+        minSdk = 21
+        targetSdk = 33
+        versionCode = flutterVersionCode.toInt()
+        versionName = flutterVersionName
+    }
+
+    buildTypes {
+        getByName("release") { // Kotlin DSL用getByName获取构建类型
+            signingConfig = signingConfigs.getByName("debug") // 测试用debug签名，正式发布需替换
+            isMinifyEnabled = false
+            isShrinkResources = false
+        }
     }
 }
 
-
-allprojects {
-    repositories {
-        google()
-        mavenCentral()
-        maven("https://maven.aliyun.com/repository/public")
-        maven("https://maven.aliyun.com/repository/central")
-        maven("https://maven.aliyun.com/repository/jcenter")
-        maven("https://maven.aliyun.com/repository/google")
-    }
+dependencies {
+    // 引用根项目的kotlin_version
+    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:${rootProject.extra["kotlin_version"]}")
 }
 
-val newBuildDir: Directory =
-    rootProject.layout.buildDirectory
-        .dir("../../build")
-        .get()
-rootProject.layout.buildDirectory.value(newBuildDir)
-
-subprojects {
-    val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
-    project.layout.buildDirectory.value(newSubprojectBuildDir)
-}
-subprojects {
-    project.evaluationDependsOn(":app")
-}
-
-tasks.register<Delete>("clean") {
-    delete(rootProject.layout.buildDirectory)
+flutter {
+    source = file("../..")
 }
