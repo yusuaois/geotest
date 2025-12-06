@@ -13,6 +13,8 @@ dependencies:
   flutter_localizations:
     sdk: flutter
 
+  http: ^1.2.0
+
   # 核心状态管理（运行时版本保留2.6.1，生成器降级到兼容版本）
   flutter_riverpod: ^2.6.1
   riverpod_annotation: ^2.6.1

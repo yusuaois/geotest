@@ -9,7 +9,7 @@ class MapSelectionState {
   MapSelectionState({this.selectedPosition, this.addressPreview});
 }
 
-class MapController extends Notifier<MapSelectionState> {
+class MapSelectionController extends Notifier<MapSelectionState> {
   @override
   MapSelectionState build() {
     return MapSelectionState(selectedPosition: null);
@@ -30,6 +30,6 @@ class MapController extends Notifier<MapSelectionState> {
   }
 }
 
-final mapControllerProvider = NotifierProvider<MapController, MapSelectionState>(() {
-  return MapController();
+final mapControllerProvider = NotifierProvider<MapSelectionController, MapSelectionState>(() {
+  return MapSelectionController();
 });
