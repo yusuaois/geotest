@@ -14,81 +14,89 @@ import 'package:triggeo/core/utils/geofence_calculator.dart';
 // --- 必须是顶级函数 (Top-level function) ---
 @pragma('vm:entry-point')
 void onStart(ServiceInstance service) async {
-  // 1. 初始化独立 Isolate 的环境
   DartPluginRegistrant.ensureInitialized();
-
-  // 2. 在后台 Isolate 初始化 Hive
   await Hive.initFlutter();
-
-  // 注册 Adapters (必须手动注册，因为这是全新的 Isolate)
   Hive.registerAdapter(ReminderLocationAdapter());
   Hive.registerAdapter(ReminderTypeAdapter());
-  
   await Hive.openBox<ReminderLocation>(ReminderRepository.boxName);
   
   final notificationPlugin = FlutterLocalNotificationsPlugin();
   final box = Hive.box<ReminderLocation>(ReminderRepository.boxName);
+  final notificationService = NotificationService(); // 确保 NotificationService 能在 Isolate 使用
 
-  // 冷却池：防止在边缘反复触发 (ID -> 上次触发时间)
+  // 冷却池
   final Map<String, DateTime> cooldowns = {};
 
-  // 3. 监听来自 UI 的事件 (例如停止服务)
-  service.on('stopService').listen((event) {
-    service.stopSelf();
-  });
+  service.on('stopService').listen((event) => service.stopSelf());
 
-  // 4. 启动位置监听流
-  // 监听位置
+  // Android 前台服务通知配置 (必须有，否则后台服务会被系统杀掉)
+  if (service is AndroidServiceInstance) {
+    service.on('setAsForeground').listen((event) {
+      service.setAsForegroundService();
+    });
+    service.on('setAsBackground').listen((event) {
+      service.setAsBackgroundService();
+    });
+  }
+
+  // 开始监听位置
   Geolocator.getPositionStream(
     locationSettings: const LocationSettings(
       accuracy: LocationAccuracy.high,
-      distanceFilter: 10, // 移动10米检查一次
+      distanceFilter: 5, // 降低到 5 米以提高测试灵敏度
     ),
-  ).listen((Position position) {
-    // A. 发送数据给 UI (保持不变)
+  ).listen((Position position) async {
+    // 1. 发送位置给 UI
     service.invoke('update', {
       "lat": position.latitude,
       "lng": position.longitude,
     });
 
-    // B. 【核心】地理围栏检测
+    // 2. 更新前台通知内容 (可选，用于调试确认服务在运行)
+    if (service is AndroidServiceInstance) {
+       service.setForegroundNotificationInfo(
+         title: "Triggeo 正在运行",
+         content: "当前位置: ${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}",
+       );
+    }
+
     final userLoc = LatLng(position.latitude, position.longitude);
     
-    // 遍历所有激活的提醒
+    // 3. 遍历提醒
+    // 注意：必须重新从 box 获取 values，因为 box 数据可能更新
     for (var reminder in box.values.where((r) => r.isActive)) {
       final targetLoc = LatLng(reminder.latitude, reminder.longitude);
       
-      // 计算是否在范围内
-      bool entered = GeofenceCalculator.isInRadius(userLoc, targetLoc, reminder.radius);
+      bool isInside = GeofenceCalculator.isInRadius(userLoc, targetLoc, reminder.radius);
 
-      if (entered) {
-        // 检查冷却 (例如：5分钟内不重复提醒同一个点)
+      if (isInside) {
         final lastTrigger = cooldowns[reminder.id];
-        if (lastTrigger == null || DateTime.now().difference(lastTrigger).inMinutes > 5) {
-          
-          // --- 触发提醒 ---
-          notificationPlugin.show(
-            reminder.id.hashCode, // 使用 HashCode 做 ID
-            "到达提醒: ${reminder.name}",
-            "您已进入目标 ${reminder.radius.toInt()} 米范围内",
-            const NotificationDetails(
-              android: AndroidNotificationDetails(
-                'triggeo_alert', // 必须与 NotificationService 定义的 channelIdAlert 一致
-                '到达提醒',
-                importance: Importance.max,
-                priority: Priority.high,
-                fullScreenIntent: true,
+        // 冷却逻辑：如果从未触发过，或距离上次触发超过 2 分钟 (测试用短一点)
+        if (lastTrigger == null || DateTime.now().difference(lastTrigger).inMinutes > 2) {
+            
+            // 触发通知
+            await notificationPlugin.show(
+              reminder.id.hashCode,
+              "到达提醒: ${reminder.name}",
+              "您已进入目标区域 (距离 ${GeofenceCalculator.calculateDistance(userLoc, targetLoc).toInt()} 米)",
+              const NotificationDetails(
+                android: AndroidNotificationDetails(
+                  'triggeo_alert', // 必须与 NotificationService.channelIdAlert 一致
+                  '位置到达提醒',
+                  importance: Importance.max,
+                  priority: Priority.high,
+                  fullScreenIntent: true,
+                  playSound: true,
+                ),
               ),
-            ),
-          );
-          
-          // 更新冷却时间
-          cooldowns[reminder.id] = DateTime.now();
-          
-          // 可选：触发后自动关闭提醒
-          // reminder.isActive = false;
-          // reminder.save();
+            );
+
+            // 更新冷却
+            cooldowns[reminder.id] = DateTime.now();
         }
+      } else {
+        // 如果离开了区域，可以考虑重置冷却（可选），以便下次进入立即触发
+        cooldowns.remove(reminder.id);
       }
     }
   });

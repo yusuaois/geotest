@@ -16,7 +16,7 @@ class ReminderListScreen extends ConsumerWidget {
         error: (err, stack) => Center(child: Text('Error: $err')),
         data: (reminders) {
           if (reminders.isEmpty) return const Center(child: Text("暂无提醒"));
-          
+
           return ListView.builder(
             itemCount: reminders.length,
             itemBuilder: (context, index) {
@@ -28,8 +28,19 @@ class ReminderListScreen extends ConsumerWidget {
                   ref.read(reminderRepositoryProvider).delete(item.id);
                 },
                 child: SwitchListTile(
-                  title: Text(item.name),
-                  subtitle: Text("半径: ${item.radius.toInt()}m"),
+                  title: Text(item.name,
+                      style: const TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 4),
+                      Text("半径: ${item.radius.toInt()} 米"),
+                      Text(
+                        "坐标: ${item.latitude.toStringAsFixed(4)}, ${item.longitude.toStringAsFixed(4)}",
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
                   value: item.isActive,
                   onChanged: (val) {
                     item.isActive = val;
