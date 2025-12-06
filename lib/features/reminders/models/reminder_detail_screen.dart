@@ -17,20 +17,42 @@ class _ReminderDetailScreenState extends ConsumerState<ReminderDetailScreen> {
   final _nameController = TextEditingController();
   double _radius = 100;
 
-  void _save() {
-    if (_nameController.text.isEmpty) return;
+  void _save() async {
+    // 1. 基本校验
+    if (_nameController.text.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('请输入名称')));
+        return;
+    }
 
-    final reminder = ReminderLocation(
-      name: _nameController.text,
-      latitude: widget.target.latitude,
-      longitude: widget.target.longitude,
-      radius: _radius,
-    );
+    try {
+        debugPrint("开始保存提醒...");
+        
+        final reminder = ReminderLocation(
+          name: _nameController.text,
+          latitude: widget.target.latitude,
+          longitude: widget.target.longitude,
+          radius: _radius,
+          isActive: true,
+        );
 
-    ref.read(reminderRepositoryProvider).save(reminder);
-    
-    // 返回地图并清除选中状态
-    context.go('/'); 
+        // 2. 调用 Repository 保存
+        final repo = ref.read(reminderRepositoryProvider);
+        await repo.save(reminder);
+        
+        debugPrint("保存成功，准备返回");
+
+        if (mounted) {
+            context.pop(); // 关闭页面
+        }
+    } catch (e) {
+        // 3. 捕获异常
+        debugPrint("保存失败: $e");
+        if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('保存失败: $e'))
+            );
+        }
+    }
   }
 
   @override

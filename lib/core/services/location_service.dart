@@ -120,16 +120,32 @@ class LocationService {
 
   // 请求权限的辅助方法
   Future<bool> requestPermission() async {
-    LocationPermission permission = await Geolocator.checkPermission();
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    // 1. 检查定位服务是否开启
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      debugPrint('定位服务未开启');
+      return false;
+    }
+
+    // 2. 检查权限状态
+    permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
+      // 3. 如果被拒绝，发起请求
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
+        debugPrint('定位权限被拒绝');
         return false;
       }
     }
+
     if (permission == LocationPermission.deniedForever) {
+      debugPrint('定位权限被永久拒绝');
       return false;
     }
+
     return true;
   }
 
