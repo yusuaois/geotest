@@ -6,6 +6,7 @@ allprojects {
         maven("https://maven.aliyun.com/repository/central")
         maven("https://maven.aliyun.com/repository/gradle-plugin")
         maven("https://maven.aliyun.com/repository/public")
+        maven("https://repo.huaweicloud.com/repository/maven/")
         google()
         mavenCentral()
     }
