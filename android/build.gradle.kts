@@ -1,26 +1,13 @@
-buildscript {
-    // 1. 锁定Kotlin版本（兼容Gradle 7.5）
-    repositories {
-        google()
-        mavenCentral()
-    }
-
-    dependencies {
-        // 2. 锁定AGP版本为7.4.2（与Gradle 7.5匹配）
-        classpath 'com.android.tools.build:gradle:7.4.2'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-    }
-}
-
-
 allprojects {
     repositories {
+        maven("https://jitpack.io")
+        maven("https://maven.aliyun.com/repository/release")
+        maven("https://maven.aliyun.com/repository/google")
+        maven("https://maven.aliyun.com/repository/central")
+        maven("https://maven.aliyun.com/repository/gradle-plugin")
+        maven("https://maven.aliyun.com/repository/public")
         google()
         mavenCentral()
-        maven("https://maven.aliyun.com/repository/public")
-        maven("https://maven.aliyun.com/repository/central")
-        maven("https://maven.aliyun.com/repository/jcenter")
-        maven("https://maven.aliyun.com/repository/google")
     }
 }
 

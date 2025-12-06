@@ -1,34 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- 定位/后台/通知等必要权限（保留） -->
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
-    <uses-permission android:name="android.permission.VIBRATE"/>
-
     <application
         android:label="triggeo"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
-
-        <!-- 1. 核心：V2 Flutter 嵌入标识（必须放在application内，这是之前缺失的关键） -->
-        <meta-data
-            android:name="flutterEmbedding"
-            android:value="2" />
-
-        <!-- 2. flutter_background_service 所需的后台服务配置（关键：修复之前错误的service） -->
-        <service
-            android:name="id.flutter.flutter_background_service.BackgroundService"
-            android:foregroundServiceType="location"
-            android:exported="true" />
-        <service
-            android:name="id.flutter.flutter_background_service.BackgroundService2"
-            android:exported="false" />
-
-        <!-- 3. 主Activity配置（保留原有正确项，补充SplashScreen配置） -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -38,31 +12,30 @@
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize">
+            <!-- Specifies an Android theme to apply to this Activity as soon as
+                 the Android process has started. This theme is visible to the user
+                 while the Flutter UI initializes. After that, this theme continues
+                 to determine the Window background behind the Flutter UI. -->
             <meta-data
-                android:name="io.flutter.embedding.android.NormalTheme"
-                android:resource="@style/NormalTheme" />
-            <!-- 可选：SplashScreen配置（兼容V2嵌入） -->
-            <meta-data
-                android:name="io.flutter.embedding.android.SplashScreenDrawable"
-                android:resource="@drawable/launch_background" />
+              android:name="io.flutter.embedding.android.NormalTheme"
+              android:resource="@style/NormalTheme"
+              />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-
-        <!-- 4. 开机自启广播接收器（flutter_background_service 所需） -->
-        <receiver
-            android:name="id.flutter.flutter_background_service.BootCompleteReceiver"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED"/>
-                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
-            </intent-filter>
-        </receiver>
+        <!-- Don't delete the meta-data below.
+             This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
+        <meta-data
+            android:name="flutterEmbedding"
+            android:value="2" />
     </application>
+    <!-- Required to query activities that can process text, see:
+         https://developer.android.com/training/package-visibility and
+         https://developer.android.com/reference/android/content/Intent#ACTION_PROCESS_TEXT.
 
-    <!-- 保留文本处理查询权限（Flutter引擎所需） -->
+         In particular, this is used by the Flutter engine in io.flutter.plugin.text.ProcessTextPlugin. -->
     <queries>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>

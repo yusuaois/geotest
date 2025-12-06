@@ -11,16 +11,15 @@ pluginManagement {
     includeBuild("$flutterSdkPath/packages/flutter_tools/gradle")
 
     repositories {
+        maven("https://jitpack.io")
+        maven("https://maven.aliyun.com/repository/release")
+        maven("https://maven.aliyun.com/repository/google")
+        maven("https://maven.aliyun.com/repository/central")
+        maven("https://maven.aliyun.com/repository/gradle-plugin")
+        maven("https://maven.aliyun.com/repository/public")
         google()
         mavenCentral()
         gradlePluginPortal()
-        maven("https://maven.aliyun.com/repository/public/") 
-        maven("https://maven.aliyun.com/repository/spring/") 
-        maven("https://maven.aliyun.com/repository/google/") 
-        maven("https://maven.aliyun.com/repository/gradle-plugin/") 
-        maven("https://maven.aliyun.com/repository/spring-plugin/") 
-        maven("https://maven.aliyun.com/repository/grails-core/") 
-        maven("https://maven.aliyun.com/repository/apache-snapshots/") 
     }
 }
 
