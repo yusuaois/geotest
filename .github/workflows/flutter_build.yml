@@ -21,7 +21,7 @@ jobs:
         # 使用官方 action 来安装和配置 Flutter SDK
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: 'stable' # 替换为你项目使用的 Flutter 版本
+          flutter-version: '3.29.0' # 替换为你项目使用的 Flutter 版本
           channel: 'stable'
 
       - name: 📦 Get Dependencies
