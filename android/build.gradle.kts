@@ -12,11 +12,6 @@ allprojects {
     }
 }
 
-android {
-    ndkVersion.set("27.0.12077973") // 注意这里使用 .set()
-    // ... 其他现有配置
-}
-
 val newBuildDir: Directory =
     rootProject.layout.buildDirectory
         .dir("../../build")
