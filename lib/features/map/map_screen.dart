@@ -1,14 +1,18 @@
 import 'dart:convert';
-import 'dart:async'; // 引入 Timer
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:http/http.dart' as http; // 用于搜索 API
+import 'package:http/http.dart' as http;
+import 'package:triggeo/core/services/overlay_service.dart';
 import 'package:triggeo/core/services/service_locator.dart';
 import 'package:triggeo/core/utils/geofence_calculator.dart';
+import 'package:triggeo/features/map/widgets/offline_tile_provider.dart';
+import 'package:triggeo/features/map/widgets/reminder_edit_dialog.dart'; // 确保引用了这个
 import 'map_controller.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
@@ -19,60 +23,57 @@ class MapScreen extends ConsumerStatefulWidget {
 }
 
 class _MapScreenState extends ConsumerState<MapScreen> {
-  // 1. 地图控制器：用于代码控制地图移动
   final MapController _mapController = MapController();
-
-  // 2. 搜索相关状态
   final TextEditingController _searchController = TextEditingController();
   List<dynamic> _searchResults = [];
   bool _isSearching = false;
-  bool _hasAutoCentered = false; // 防止每次位置更新都强制拉回用户位置
+  bool _hasAutoCentered = false;
 
   @override
   void initState() {
     super.initState();
-    // 页面加载后检查权限并请求定位
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(locationServiceProvider).requestPermission();
     });
+    // 监听后台服务消息
+    FlutterBackgroundService().on('showOverlay').listen((event) {
+      if (event != null) {
+        final name = event['name'] as String;
+        final lat = event['lat'] as double;
+        final lng = event['lng'] as double;
+
+        OverlayService.showArrivalFloat(name, LatLng(lat, lng));
+      }
+    });
   }
 
-  // --- 搜索功能实现 (使用 OSM Nominatim API) ---
   Future<void> _searchPlaces(String query) async {
     if (query.isEmpty) return;
     setState(() => _isSearching = true);
-
-    // 为了避免频繁请求，实际项目中建议加防抖 (Debounce)
     final url = Uri.parse(
         'https://nominatim.openstreetmap.org/search?q=$query&format=json&limit=5&accept-language=zh-CN');
-
     try {
-      final response = await http.get(url, headers: {
-        // OSM 要求必须带 User-Agent
-        'User-Agent': 'TriggeoApp/1.0',
-      });
-
+      final response =
+          await http.get(url, headers: {'User-Agent': 'TriggeoApp/1.0'});
       if (response.statusCode == 200) {
         setState(() {
           _searchResults = json.decode(response.body);
         });
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('搜索失败: $e')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('搜索失败: $e')));
     } finally {
       setState(() => _isSearching = false);
     }
   }
 
-  // 移动地图到搜索结果
   void _moveToLocation(double lat, double lon) {
     _mapController.move(LatLng(lat, lon), 15.0);
     setState(() {
-      _searchResults = []; // 清空搜索结果
+      _searchResults = [];
       _searchController.clear();
-      FocusScope.of(context).unfocus(); // 收起键盘
+      FocusScope.of(context).unfocus();
     });
   }
 
@@ -80,7 +81,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   Widget build(BuildContext context) {
     final locationAsync = ref.watch(currentLocationProvider);
     final selectionState = ref.watch(mapControllerProvider);
-    final mapNotifier = ref.read(mapControllerProvider.notifier);
+    // mapNotifier 不需要了，因为我们直接用 Dialog，不再需要 MapController 的 selectLocation
 
     LatLng? userLatLng;
     if (locationAsync.value != null) {
@@ -89,39 +90,34 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         locationAsync.value!['lng'],
       );
 
-      // ✅ 自动定位逻辑：
-      // 只有在第一次获取到位置，且尚未自动定位过时，才移动地图
       if (!_hasAutoCentered && userLatLng != null) {
-        // 使用微小的延迟确保 MapController 已绑定
         Future.delayed(const Duration(milliseconds: 500), () {
           _mapController.move(userLatLng!, 15.0);
         });
-        _hasAutoCentered = true; // 标记已定位
+        _hasAutoCentered = true;
       }
     }
 
-    // 计算距离信息
-    String distanceInfo = "长按地图选择目标";
-    if (userLatLng != null && selectionState.selectedPosition != null) {
-      final dist = GeofenceCalculator.calculateDistance(
-          userLatLng, selectionState.selectedPosition!);
-      distanceInfo = "距离: ${GeofenceCalculator.formatDistance(dist)}";
-    }
+    // 这里不再计算 distanceInfo，因为信息现在显示在弹窗里了
+
     return Scaffold(
-      // 使用 resizeToAvoidBottomInset 防止键盘顶起地图
       resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
-          // --- 层级 1: 地图 ---
+          // --- 层级 1: 地图 (这是唯一的 FlutterMap) ---
           FlutterMap(
-            mapController: _mapController, // ✅ 绑定控制器
+            mapController: _mapController,
             options: MapOptions(
-              // 初始中心点 (如果还未获取到定位，先显示北京)
               initialCenter: const LatLng(39.9042, 116.4074),
               initialZoom: 15.0,
-              onLongPress: (_, latlng) => mapNotifier.selectLocation(latlng),
+              // ✅ 修复点：将长按逻辑放在这里
+              onLongPress: (_, latlng) {
+                showDialog(
+                  context: context,
+                  builder: (context) => ReminderEditDialog(position: latlng),
+                );
+              },
               onTap: (_, __) {
-                // 点击地图空白处，收起搜索结果
                 if (_searchResults.isNotEmpty) {
                   setState(() => _searchResults = []);
                 }
@@ -131,10 +127,10 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               TileLayer(
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.example.triggeo',
+                tileProvider: OfflineTileProvider(), // 使用自定义 Provider
               ),
               MarkerLayer(
                 markers: [
-                  // 用户位置：蓝色圆点 + 白色箭头
                   if (userLatLng != null)
                     Marker(
                       point: userLatLng!,
@@ -152,17 +148,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                             color: Colors.blue, size: 25),
                       ),
                     ),
-                  // 选中位置：红色大头针
-                  if (selectionState.selectedPosition != null)
-                    Marker(
-                      point: selectionState.selectedPosition!,
-                      width: 50,
-                      height: 50,
-                      // 添加 alignment 确保针尖对准坐标
-                      alignment: Alignment.topCenter,
-                      child: const Icon(Icons.location_on,
-                          color: Colors.red, size: 50),
-                    ),
+                  // 注意：因为现在长按直接出弹窗，不需要红色的 selectionState marker 了
+                  // 除非你想在弹窗关闭前保留它，但现在的逻辑是直接保存。
                 ],
               ),
             ],
@@ -175,10 +162,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             right: 16,
             child: Column(
               children: [
-                // 搜索框和设置按钮在同一行
                 Row(
                   children: [
-                    // 搜索框（使用 Expanded 占据剩余空间）
                     Expanded(
                       child: Card(
                         elevation: 4,
@@ -212,7 +197,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                         ),
                       ),
                     ),
-                    // 设置按钮
                     IconButton(
                       icon: const Icon(Icons.settings),
                       onPressed: () => context.push('/settings'),
@@ -226,8 +210,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                     ),
                   ],
                 ),
-
-                // 搜索结果列表 (悬浮在地图上)
                 if (_searchResults.isNotEmpty)
                   Container(
                     margin: const EdgeInsets.only(top: 5),
@@ -268,9 +250,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           // --- 层级 3: 回到当前位置按钮 ---
           Positioned(
             right: 16,
-            bottom: selectionState.selectedPosition != null
-                ? 220
-                : 100, // 根据底部卡片调整位置
+            bottom: 100, // 固定位置，不再需要动态调整
             child: FloatingActionButton(
               heroTag: "my_location",
               mini: true,
@@ -278,17 +258,13 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               child: Icon(Icons.my_location,
                   color: Theme.of(context).colorScheme.onPrimaryContainer),
               onPressed: () async {
-                // 1. 尝试使用当前缓存的位置
                 if (userLatLng != null) {
                   _mapController.move(userLatLng!, 15.0);
                   return;
                 }
-
-                // 2. 如果没有缓存，显示加载并强制获取
                 ScaffoldMessenger.of(context)
                     .showSnackBar(const SnackBar(content: Text('正在定位中...')));
                 try {
-                  // 强制获取一次当前位置 (需引入 geolocator)
                   final pos = await Geolocator.getCurrentPosition();
                   _mapController.move(
                       LatLng(pos.latitude, pos.longitude), 15.0);
@@ -300,61 +276,15 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             ),
           ),
 
-          // --- 层级 4: 底部操作卡片 (保持原有逻辑) ---
-          if (selectionState.selectedPosition != null)
-            Positioned(
-              bottom: 30,
-              left: 16,
-              right: 16,
-              child: Card(
-                elevation: 8,
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text("目标位置",
-                          style: Theme.of(context).textTheme.titleLarge),
-                      const SizedBox(height: 8),
-                      // 显示距离
-                      Text(distanceInfo,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold, color: Colors.blue)),
-                      const SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          TextButton(
-                            onPressed: () => mapNotifier.clearSelection(),
-                            child: const Text("取消"),
-                          ),
-                          ElevatedButton.icon(
-                            icon: const Icon(Icons.add_alarm),
-                            label: const Text("添加提醒"),
-                            onPressed: () {
-                              context.push('/add',
-                                  extra: selectionState.selectedPosition!);
-                            },
-                          ),
-                        ],
-                      )
-                    ],
-                  ),
-                ),
-              ),
-            ),
+          // ❌ 已删除：这里原本有一个多余的 FlutterMap，导致了覆盖问题
         ],
       ),
-      // 这里的 FAB 用于打开列表页
-      //
-      floatingActionButton: selectionState.selectedPosition == null
-          ? FloatingActionButton(
-              onPressed: () {
-                context.push('/list');
-              },
-              child: const Icon(Icons.list),
-            )
-          : null,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          context.push('/list');
+        },
+        child: const Icon(Icons.list),
+      ),
     );
   }
 }

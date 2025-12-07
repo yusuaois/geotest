@@ -2,6 +2,7 @@ name: triggeo
 description: A smart location reminder application based on OpenStreetMap.
 publish_to: 'none'
 version: 1.0.0+1
+uses-material-design: true
 
 # 匹配Flutter 3.27.4的Dart 3.3.4（放宽到3.3.0+，避免版本锁死）
 environment:
@@ -12,6 +13,9 @@ dependencies:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
+
+  dio: ^5.4.0
+  path_provider: ^2.1.2
 
   http: ^1.2.0
 

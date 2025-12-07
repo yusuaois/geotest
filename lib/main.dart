@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:triggeo/data/repositories/reminder_repository.dart';
+import 'core/services/overlay_service.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/location_service.dart';
 import 'features/settings/theme_controller.dart';

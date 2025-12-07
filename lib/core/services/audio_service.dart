@@ -1,31 +1,56 @@
+import 'dart:io';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:vibration/vibration.dart';
+import 'package:flutter/foundation.dart';
 
 class AudioService {
   final AudioPlayer _audioPlayer = AudioPlayer();
 
-  // 播放默认铃声 (Assets)
-  Future<void> playDefaultAlert() async {
-    await stop(); // 先停止当前播放
-    // 假设你稍后会在 assets/audio/ 放入 alert.mp3
-    // 如果没有文件，这行代码会报错，请确保 assets 存在
-    // await _audioPlayer.play(AssetSource('audio/default_alert.mp3'));
-    
-    // 暂时用一个简单的 web URL 测试，或者你可以暂时注释掉
-    // 实际项目中请使用 AssetSource
+  /// 播放指定路径的音频文件
+  Future<void> playCustomFile(String filePath) async {
+    await stopPlay(); // 播放前先停止
+    try {
+      if (filePath.isNotEmpty && File(filePath).existsSync()) {
+        await _audioPlayer.play(DeviceFileSource(filePath));
+      } else {
+        debugPrint("音频文件不存在: $filePath");
+      }
+    } catch (e) {
+      debugPrint("播放音频失败: $e");
+    }
   }
 
-  // 播放自定义文件
-  Future<void> playCustomFile(String filePath) async {
-    await stop();
-    await _audioPlayer.play(DeviceFileSource(filePath));
+  /// 触发震动
+  /// [pattern] 为 null 时执行默认长震动
+  Future<void> vibrate({List<int>? pattern}) async {
+    if (await Vibration.hasVibrator()) {
+      if (pattern != null) {
+        Vibration.vibrate(pattern: pattern);
+      } else {
+        // 默认震动模式：等待0ms，震动1000ms，等待500ms，震动1000ms
+        Vibration.vibrate(pattern: [0, 1000, 500, 1000, 500, 1000, 500, 1000, 500, 1000]);
+      }
+    } else {
+      debugPrint("设备不支持震动");
+    }
+  }
+
+  /// 停止播放和震动
+  Future<void> stop() async {
+    await _audioPlayer.stop();
+    Vibration.cancel();
   }
 
   // 停止播放
-  Future<void> stop() async {
+  Future<void> stopPlay() async {
     await _audioPlayer.stop();
   }
 
-  // 释放资源
+  // 停止震动
+  Future<void> stopVibrate() async {
+    Vibration.cancel();
+  }
+
   void dispose() {
     _audioPlayer.dispose();
   }
