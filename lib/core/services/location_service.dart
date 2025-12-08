@@ -22,11 +22,9 @@ void onStart(ServiceInstance service) async {
 
   // 1. 初始化 Hive 和 Adapter
   await Hive.initFlutter();
-  if (!Hive.isAdapterRegistered(0)) {
-    Hive.registerAdapter(ReminderLocationAdapter());
-    Hive.registerAdapter(OfflineRegionAdapter());
-  }
+  if (!Hive.isAdapterRegistered(0))  Hive.registerAdapter(ReminderLocationAdapter());
   if (!Hive.isAdapterRegistered(1)) Hive.registerAdapter(ReminderTypeAdapter());
+  if (!Hive.isAdapterRegistered(2)) Hive.registerAdapter(OfflineRegionAdapter());;
 
   // 2. 打开所有需要的 Box
   await Hive.openBox<ReminderLocation>(ReminderRepository.boxName);
