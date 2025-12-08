@@ -28,7 +28,7 @@ class AudioService {
         Vibration.vibrate(pattern: pattern);
       } else {
         // 默认震动模式：等待0ms，震动1000ms，等待500ms，震动1000ms
-        Vibration.vibrate(pattern: [0, 1000, 500, 1000, 500, 1000, 500, 1000, 500, 1000]);
+        Vibration.vibrate(pattern: [0, 1000, 500, 1000, 500, 1000, 500, 1000, 500, 1000],amplitude: 255);
       }
     } else {
       debugPrint("设备不支持震动");

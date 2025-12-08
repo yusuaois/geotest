@@ -92,7 +92,7 @@ void onStart(ServiceInstance service) async {
           // B. 触发震动
           if (reminderTypeIndex == 1 || reminderTypeIndex == 2) {
             if (await Vibration.hasVibrator()) {
-              Vibration.vibrate(pattern: [0, 1000, 500, 1000, 500, 1000, 500, 1000, 500, 1000]);
+              Vibration.vibrate(pattern: [0, 1000, 500, 1000, 500, 1000, 500, 1000, 500, 1000],amplitude: 255);
             }
           }
 
