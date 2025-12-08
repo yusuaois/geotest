@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
 import 'package:triggeo/core/services/service_locator.dart';
+import 'package:triggeo/data/repositories/settings_repository.dart';
 import 'package:triggeo/features/map/widgets/offline_tile_provider.dart';
 import 'package:triggeo/features/map/widgets/reminder_edit_dialog.dart'; // 确保引用了这个
 import 'map_controller.dart';
@@ -69,21 +70,25 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   Widget build(BuildContext context) {
     final locationAsync = ref.watch(currentLocationProvider);
     final selectionState = ref.watch(mapControllerProvider);
+    final tileUrl = ref.watch(tileUrlProvider);
     // mapNotifier 不需要了，因为我们直接用 Dialog，不再需要 MapController 的 selectLocation
 
+    // 1. Extract LatLng directly. If loading or error, it remains null.
     LatLng? userLatLng;
     if (locationAsync.value != null) {
       userLatLng = LatLng(
         locationAsync.value!['lat'],
         locationAsync.value!['lng'],
       );
+    }
 
-      if (!_hasAutoCentered && userLatLng != null) {
-        Future.delayed(const Duration(milliseconds: 500), () {
-          _mapController.move(userLatLng!, 15.0);
-        });
-        _hasAutoCentered = true;
-      }
+    // 2. Handle Auto-Center Logic
+    // Using addPostFrameCallback ensures we don't move the map during the build phase
+    if (!_hasAutoCentered && userLatLng != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _mapController.move(userLatLng!, 15.0);
+      });
+      _hasAutoCentered = true;
     }
 
     // 这里不再计算 distanceInfo，因为信息现在显示在弹窗里了
@@ -113,31 +118,48 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             ),
             children: [
               TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                urlTemplate: tileUrl, // 动态使用设置的镜像站
                 userAgentPackageName: 'com.example.triggeo',
-                tileProvider: OfflineTileProvider(), // 使用自定义 Provider
+                tileProvider: OfflineTileProvider(), // 支持离线
               ),
               MarkerLayer(
                 markers: [
                   if (userLatLng != null)
                     Marker(
                       point: userLatLng!,
-                      width: 40,
-                      height: 40,
-                      child: Container(
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(blurRadius: 5, color: Colors.black26)
-                          ],
-                        ),
-                        child: const Icon(Icons.navigation,
-                            color: Colors.blue, size: 25),
+                      width: 48.0, // 稍微调大一点便于点击
+                      height: 48.0,
+                      // 移除 const，确保 Key 唯一但不会过度缓存
+                      key: const ValueKey('userLocationMarker'),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // 1. 白色底圆
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                              border: Border.all(color: Colors.white, width: 2),
+                            ),
+                          ),
+                          // 2. 蓝色导航箭头图标
+                          const Icon(
+                            Icons.navigation,
+                            color: Colors.blueAccent,
+                            size: 24, 
+                          ),
+                        ],
                       ),
                     ),
-                  // 注意：因为现在长按直接出弹窗，不需要红色的 selectionState marker 了
-                  // 除非你想在弹窗关闭前保留它，但现在的逻辑是直接保存。
                 ],
               ),
             ],
@@ -247,14 +269,18 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   color: Theme.of(context).colorScheme.onPrimaryContainer),
               onPressed: () async {
                 if (userLatLng != null) {
-                  // TODO 重新放置Marker
-                  _mapController.move(userLatLng, 15.0);
+                  _mapController.move(userLatLng!, 15.0);
                   return;
                 }
+
+                // 2. 如果没有位置，可能是服务还没初始化或没信号，强制请求一次
                 ScaffoldMessenger.of(context)
-                    .showSnackBar(const SnackBar(content: Text('正在定位中...')));
+                    .showSnackBar(const SnackBar(content: Text('正在定位...')));
                 try {
                   final pos = await Geolocator.getCurrentPosition();
+                  // 这里不需要手动创建 Marker，因为 Geolocator 的后台流应该也会更新
+                  // 如果后台流没更新，我们可以手动强制刷新一下 Provider (如果不适用 StreamProvider的话)
+                  // 但在使用 StreamProvider 的情况下，我们主要依赖流的推送
                   _mapController.move(
                       LatLng(pos.latitude, pos.longitude), 15.0);
                 } catch (e) {

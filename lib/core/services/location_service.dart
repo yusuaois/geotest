@@ -9,6 +9,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:audioplayers/audioplayers.dart'; // 引入音频播放
+import 'package:triggeo/data/models/offline_region.dart';
 import 'package:vibration/vibration.dart'; // 引入震动
 import 'package:triggeo/data/models/reminder_location.dart';
 import 'package:triggeo/data/repositories/reminder_repository.dart';
@@ -23,6 +24,7 @@ void onStart(ServiceInstance service) async {
   await Hive.initFlutter();
   if (!Hive.isAdapterRegistered(0)) {
     Hive.registerAdapter(ReminderLocationAdapter());
+    Hive.registerAdapter(OfflineRegionAdapter());
   }
   if (!Hive.isAdapterRegistered(1)) Hive.registerAdapter(ReminderTypeAdapter());
 
@@ -69,9 +71,8 @@ void onStart(ServiceInstance service) async {
       if (GeofenceCalculator.isInRadius(userLoc, targetLoc, reminder.radius)) {
         final lastTrigger = cooldowns[reminder.id];
 
-        // 冷却时间 5s
         if (lastTrigger == null ||
-            DateTime.now().difference(lastTrigger).inSeconds > 5) {
+            DateTime.now().difference(lastTrigger).inSeconds > 30) {
           // A. 显示视觉通知
           await notificationPlugin.show(
             reminder.id.hashCode,
@@ -92,7 +93,7 @@ void onStart(ServiceInstance service) async {
           // B. 触发震动
           if (reminderTypeIndex == 1 || reminderTypeIndex == 2) {
             if (await Vibration.hasVibrator()) {
-              Vibration.vibrate(pattern: [0, 1000, 500, 1000, 500, 1000, 500, 1000, 500, 1000],amplitude: 255);
+              Vibration.vibrate(pattern: [0, 1000, 500, 1000, 500, 1000, 500, 1000, 500, 1000, 100,200, 100, 200, 100, 200, 100,200, 100, 200],amplitude: 255);
             }
           }
 

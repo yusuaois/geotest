@@ -1,26 +1,48 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:triggeo/core/utils/tile_math.dart';
+import 'package:triggeo/core/utils/tile_math.dart'; // 引用之前的 TileMath
+import 'package:triggeo/data/models/offline_region.dart';
+import 'package:uuid/uuid.dart';
+import 'package:http/http.dart' as http; // 用于 Nominatim API
 
 class OfflineMapService {
   final Dio _dio = Dio();
   bool _isDownloading = false;
-  
-  // 获取离线地图根目录
-  Future<String> get _offlineMapDir async {
-    final dir = await getApplicationDocumentsDirectory();
-    final path = '${dir.path}/offline_maps';
-    if (!await Directory(path).exists()) {
-      await Directory(path).create(recursive: true);
+  static const String _boxName = 'offline_regions';
+
+  // 搜索城市并获取边界
+  Future<List<Map<String, dynamic>>> searchCity(String query) async {
+    final url = Uri.parse(
+        'https://nominatim.openstreetmap.org/search?city=$query&format=json&limit=5');
+    
+    final response = await http.get(url, headers: {'User-Agent': 'TriggeoApp/1.0'});
+    
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      return data.map((item) {
+        // Nominatim bbox 格式: [minLat, maxLat, minLon, maxLon] (字符串数组)
+        final bbox = item['boundingbox'];
+        return {
+          'name': item['display_name'],
+          'lat': double.parse(item['lat']),
+          'lon': double.parse(item['lon']),
+          'bounds': LatLngBounds(
+            LatLng(double.parse(bbox[1]), double.parse(bbox[2])), // NorthWest (MaxLat, MinLon) - latlong2定义可能不同，需注意
+            LatLng(double.parse(bbox[0]), double.parse(bbox[3])), // SouthEast (MinLat, MaxLon)
+          )
+        };
+      }).toList();
     }
-    return path;
+    return [];
   }
 
-  // 计算区域内的瓦片数量
+  // 估算瓦片数量
   int estimateTileCount(LatLngBounds bounds, int minZoom, int maxZoom) {
     int count = 0;
     for (int z = minZoom; z <= maxZoom; z++) {
@@ -31,19 +53,25 @@ class OfflineMapService {
     return count;
   }
 
-  // 下载地图区域
-  Stream<double> downloadRegion({
-    required String regionName,
+  // 下载核心逻辑 (支持镜像站模板)
+  Stream<double> downloadCity({
+    required String cityName,
     required LatLngBounds bounds,
     required int minZoom,
     required int maxZoom,
+    required String urlTemplate, // 从 Settings 传入
   }) async* {
     if (_isDownloading) throw Exception("已有下载任务在进行");
     _isDownloading = true;
 
-    final rootPath = await _offlineMapDir;
+    final appDir = await getApplicationDocumentsDirectory();
+    final regionId = const Uuid().v4();
+    // 使用独立目录：offline_maps/regionId/z/x/y.png
+    final regionDir = '${appDir.path}/offline_maps/$regionId'; 
+    
     final totalTiles = estimateTileCount(bounds, minZoom, maxZoom);
     int downloadedCount = 0;
+    int failedCount = 0;
 
     try {
       for (int z = minZoom; z <= maxZoom; z++) {
@@ -52,77 +80,76 @@ class OfflineMapService {
 
         for (int x = topLeft.x; x <= bottomRight.x; x++) {
           for (int y = topLeft.y; y <= bottomRight.y; y++) {
-            if (!_isDownloading) break; // 支持取消
+            if (!_isDownloading) break;
 
-            final url = 'https://tile.openstreetmap.org/$z/$x/$y.png';
-            final savePath = '$rootPath/$z/$x/$y.png'; // 统一结构，不按区域分文件夹，方便复用
+            final url = urlTemplate
+                .replaceAll('{z}', z.toString())
+                .replaceAll('{x}', x.toString())
+                .replaceAll('{y}', y.toString());
+            
+            final savePath = '$regionDir/$z/$x/$y.png';
             
             final file = File(savePath);
             if (!await file.exists()) {
               try {
-                // 确保目录存在
                 await file.parent.create(recursive: true);
-                // 下载必须带 User-Agent
                 await _dio.download(
                   url, 
                   savePath,
                   options: Options(headers: {'User-Agent': 'TriggeoApp/1.0'}),
                 );
               } catch (e) {
-                debugPrint("下载瓦片失败 $z/$x/$y: $e");
+                failedCount++;
+                debugPrint("Tile failed: $z/$x/$y");
               }
             }
-            
             downloadedCount++;
-            yield downloadedCount / totalTiles;
+            // 每下载 10 个汇报一次进度，减少 Stream 压力
+            if (downloadedCount % 10 == 0) yield downloadedCount / totalTiles;
           }
         }
       }
-      
-      // 保存区域元数据（用于管理列表）
-      await _saveRegionMetadata(regionName, bounds, totalTiles);
+
+      // 只有正常结束才保存元数据
+      if (_isDownloading) {
+        final box = await Hive.openBox<OfflineRegion>(_boxName);
+        final region = OfflineRegion(
+          id: regionId,
+          name: cityName.split(',')[0], // 简化名称
+          minLat: bounds.south,
+          maxLat: bounds.north,
+          minLon: bounds.west,
+          maxLon: bounds.east,
+          minZoom: minZoom,
+          maxZoom: maxZoom,
+          tileCount: downloadedCount,
+          sizeInMB: (downloadedCount * 0.02), // 估算：每张图约 20KB
+          downloadDate: DateTime.now(),
+        );
+        await box.add(region);
+        yield 1.0;
+      }
 
     } finally {
       _isDownloading = false;
     }
   }
 
-  void cancelDownload() {
-    _isDownloading = false;
-  }
-
-  Future<void> _saveRegionMetadata(String name, LatLngBounds bounds, int count) async {
-    final root = await _offlineMapDir;
-    final file = File('$root/regions.csv');
-    // 简单格式: Name,MinLat,MinLon,MaxLat,MaxLon,Count,Size(est)
-    String line = '$name,${bounds.south},${bounds.west},${bounds.north},${bounds.east},$count,${DateTime.now().toIso8601String()}\n';
-    await file.writeAsString(line, mode: FileMode.append);
-  }
-
-  Future<List<Map<String, dynamic>>> getDownloadedRegions() async {
-    final root = await _offlineMapDir;
-    final file = File('$root/regions.csv');
-    if (!await file.exists()) return [];
-
-    final lines = await file.readAsLines();
-    return lines.map((line) {
-      final parts = line.split(',');
-      return {
-        'name': parts[0],
-        'bounds': LatLngBounds(LatLng(double.parse(parts[3]), double.parse(parts[4])), LatLng(double.parse(parts[1]), double.parse(parts[2]))),
-        'count': parts[5],
-        'date': parts[6],
-      };
-    }).toList();
-  }
-
-  // 清理逻辑：为了简化，这里只删除记录，实际物理文件删除很复杂因为多个区域可能共用瓦片
-  // 真正的清理需要遍历所有瓦片看是否属于剩余区域，或者直接提供“清空所有缓存”的功能
-  Future<void> clearAllCache() async {
-    final root = await _offlineMapDir;
-    final dir = Directory(root);
-    if (await dir.exists()) {
-      await dir.delete(recursive: true);
+  // 删除离线包
+  Future<void> deleteRegion(OfflineRegion region) async {
+    final appDir = await getApplicationDocumentsDirectory();
+    final regionDir = Directory('${appDir.path}/offline_maps/${region.id}');
+    
+    if (await regionDir.exists()) {
+      await regionDir.delete(recursive: true);
     }
+    
+    await region.delete(); // 从 Hive 中移除
+  }
+
+  // 获取所有离线包
+  Future<List<OfflineRegion>> getDownloadedRegions() async {
+    final box = await Hive.openBox<OfflineRegion>(_boxName);
+    return box.values.toList();
   }
 }

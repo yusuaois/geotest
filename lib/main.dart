@@ -63,8 +63,6 @@ class TriggeoApp extends ConsumerWidget { // 改为 ConsumerWidget 以监听 Riv
 
         return MaterialApp.router(
           title: 'Triggeo',
-          debugShowCheckedModeBanner: false, // 移除调试标签
-          
           // 3. 配置浅色主题
           theme: ThemeData(
             useMaterial3: true,

@@ -8,6 +8,7 @@ import 'package:path/path.dart' as path;
 import 'package:triggeo/core/services/service_locator.dart';
 import 'package:triggeo/features/settings/offline_map_screen.dart';
 import 'package:triggeo/features/settings/theme_controller.dart';
+import 'package:triggeo/data/repositories/settings_repository.dart';
 
 // 定义提醒方式枚举 (建议放在单独的 model 文件中，这里为了方便直接展示)
 enum GlobalReminderType { ringtone, vibration, both }
@@ -205,16 +206,74 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           // ... 其他外观组件 ...
           const Divider(),
-          _buildSectionHeader(context, "地图数据"),
+          _buildSectionHeader(context, "地图数据"), // New Section Header
           ListTile(
-            leading: const Icon(Icons.map_outlined),
+            leading: const Icon(Icons.download_for_offline),
             title: const Text("离线地图管理"),
-            subtitle: const Text("下载地图以供离线使用"),
+            subtitle: const Text("下载离线地图数据"),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => const OfflineMapScreen(),
-              ));
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const OfflineMapScreen()),
+              );
+            },
+          ),
+
+          const Divider(),
+          Consumer(
+            builder: (context, ref, child) {
+              final settingsRepo = ref.watch(settingsRepositoryProvider);
+              final currentIndex = settingsRepo.getCurrentTileSourceIndex();
+              final theme = Theme.of(context);
+
+              return ListTile(
+                title: const Text("地图源"),
+                subtitle: Text(kTileSources[currentIndex].name),
+                trailing: PopupMenuButton<int>(
+                  // 1. 显式设置菜单背景色，确保与卡片或背景区分
+                  color: theme.colorScheme.surfaceContainerHigh, 
+                  initialValue: currentIndex,
+                  // 2. 调整图标颜色
+                  icon: Icon(Icons.more_vert, color: theme.colorScheme.onSurface),
+                  onSelected: (index) async {
+                    await settingsRepo.setTileSource(index);
+                    setState(() {});
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("地图源已切换，请重新进入地图页生效")),
+                      );
+                    }
+                  },
+                  itemBuilder: (context) =>
+                      List.generate(kTileSources.length, (index) {
+                    final isSelected = index == currentIndex;
+                    return PopupMenuItem(
+                      value: index,
+                      child: Row(
+                        children: [
+                          // 添加选中指示器
+                          Icon(
+                            isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                            color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              kTileSources[index].name,
+                              style: TextStyle(
+                                // 3. 显式设置文字颜色，确保对比度
+                                color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface,
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                ),
+              );
             },
           ),
         ],
