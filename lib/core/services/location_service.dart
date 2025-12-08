@@ -69,9 +69,9 @@ void onStart(ServiceInstance service) async {
       if (GeofenceCalculator.isInRadius(userLoc, targetLoc, reminder.radius)) {
         final lastTrigger = cooldowns[reminder.id];
 
-        // 冷却时间 2 分钟
+        // 冷却时间 5s
         if (lastTrigger == null ||
-            DateTime.now().difference(lastTrigger).inMinutes > 2) {
+            DateTime.now().difference(lastTrigger).inSeconds > 5) {
           // A. 显示视觉通知
           await notificationPlugin.show(
             reminder.id.hashCode,
@@ -140,8 +140,8 @@ class LocationService {
         autoStart: false, // 我们希望用户手动开启
         isForegroundMode: true,
         notificationChannelId: NotificationService.channelIdBackground,
-        initialNotificationTitle: 'Triggeo 服务初始化',
-        initialNotificationContent: '准备开始位置检测...',
+        initialNotificationTitle: 'Triggeo 后台检测',
+        initialNotificationContent: '后台定位检测中...',
         foregroundServiceNotificationId: 888,
       ),
       iosConfiguration: IosConfiguration(
