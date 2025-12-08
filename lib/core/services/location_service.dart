@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
+import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -13,16 +14,43 @@ import 'package:triggeo/data/models/reminder_location.dart';
 import 'package:triggeo/data/repositories/reminder_repository.dart';
 import 'package:triggeo/core/utils/geofence_calculator.dart';
 import 'package:triggeo/core/services/notification_service.dart'; // 确保引用了常量
-import 'package:triggeo/core/services/overlay_service.dart';
+
+// void initializeBackgroundService() async {
+//   final service = FlutterBackgroundService();
+
+//   // Android 配置
+//   AndroidConfiguration androidConfiguration = AndroidConfiguration(
+//     onStart: onStart,
+//     autoStart: true,
+//     isForegroundMode: true,
+//     notificationChannelId: 'triggeo_channel',
+//     initialNotificationTitle: 'Triggeo Service',
+//     initialNotificationContent: 'Initializing',
+//     foregroundServiceNotificationId: 888,
+//   );
+//   await service.configure(
+//     androidConfiguration: androidConfiguration,
+//     iosConfiguration: IosConfiguration(),
+//   );
+
+//   service.startService();
+// }
 
 @pragma('vm:entry-point')
 void onStart(ServiceInstance service) async {
+  // if (service is AndroidServiceInstance) {
+  //   service.setForegroundNotificationInfo(
+  //     title: "Triggeo Running",
+  //     content: "Location service is active",
+  //   );
+  // }
   DartPluginRegistrant.ensureInitialized();
 
   // 1. 初始化 Hive 和 Adapter
   await Hive.initFlutter();
-  if (!Hive.isAdapterRegistered(0))
+  if (!Hive.isAdapterRegistered(0)) {
     Hive.registerAdapter(ReminderLocationAdapter());
+  }
   if (!Hive.isAdapterRegistered(1)) Hive.registerAdapter(ReminderTypeAdapter());
 
   // 2. 打开所有需要的 Box
@@ -43,7 +71,7 @@ void onStart(ServiceInstance service) async {
   Geolocator.getPositionStream(
     locationSettings: const LocationSettings(
       accuracy: LocationAccuracy.high,
-      distanceFilter: 5,
+      distanceFilter: 10,
     ),
   ).listen((Position position) async {
     service.invoke('update', {
@@ -60,6 +88,9 @@ void onStart(ServiceInstance service) async {
     final String? customRingtonePath = settingsBox.get('custom_ringtone_path');
 
     for (var reminder in reminderBox.values.where((r) => r.isActive)) {
+      // debug Reminder 的名字
+      print('Reminder: ${reminder.name}');
+
       final targetLoc = LatLng(reminder.latitude, reminder.longitude);
 
       if (GeofenceCalculator.isInRadius(userLoc, targetLoc, reminder.radius)) {
@@ -87,7 +118,7 @@ void onStart(ServiceInstance service) async {
 
           // B. 触发震动
           if (reminderTypeIndex == 1 || reminderTypeIndex == 2) {
-            if (await Vibration.hasVibrator() ?? false) {
+            if (await Vibration.hasVibrator()) {
               Vibration.vibrate(pattern: [0, 1000, 500, 1000]);
             }
           }

@@ -10,7 +10,6 @@ import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
 import 'package:triggeo/core/services/overlay_service.dart';
 import 'package:triggeo/core/services/service_locator.dart';
-import 'package:triggeo/core/utils/geofence_calculator.dart';
 import 'package:triggeo/features/map/widgets/offline_tile_provider.dart';
 import 'package:triggeo/features/map/widgets/reminder_edit_dialog.dart'; // 确保引用了这个
 import 'map_controller.dart';
