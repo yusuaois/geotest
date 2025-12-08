@@ -230,46 +230,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 title: const Text("地图源"),
                 subtitle: Text(kTileSources[currentIndex].name),
                 trailing: PopupMenuButton<int>(
-                  // 1. 显式设置菜单背景色，确保与卡片或背景区分
-                  color: theme.colorScheme.surfaceContainerHigh, 
                   initialValue: currentIndex,
-                  // 2. 调整图标颜色
-                  icon: Icon(Icons.more_vert, color: theme.colorScheme.onSurface),
                   onSelected: (index) async {
                     await settingsRepo.setTileSource(index);
+                    // 强制刷新整个应用或通知相关 Provider 更新（视 Riverpod 结构而定）
                     setState(() {});
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("地图源已切换，请重新进入地图页生效")),
-                      );
-                    }
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("地图源已切换，重启应用或重新进入地图页生效")),
+                    );
                   },
                   itemBuilder: (context) =>
                       List.generate(kTileSources.length, (index) {
-                    final isSelected = index == currentIndex;
                     return PopupMenuItem(
                       value: index,
-                      child: Row(
-                        children: [
-                          // 添加选中指示器
-                          Icon(
-                            isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-                            color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              kTileSources[index].name,
-                              style: TextStyle(
-                                // 3. 显式设置文字颜色，确保对比度
-                                color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface,
-                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                      child: Text(kTileSources[index].name),
                     );
                   }),
                 ),

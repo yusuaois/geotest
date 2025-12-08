@@ -124,40 +124,25 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               ),
               MarkerLayer(
                 markers: [
+                  // This block guarantees only ONE marker exists for the user location.
+                  // It updates automatically whenever userLatLng changes (via ref.watch).
                   if (userLatLng != null)
                     Marker(
                       point: userLatLng!,
-                      width: 48.0, // 稍微调大一点便于点击
-                      height: 48.0,
-                      // 移除 const，确保 Key 唯一但不会过度缓存
+                      width: 40,
+                      height: 40,
+                      // Using key helps Flutter optimize repaints
                       key: const ValueKey('userLocationMarker'),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          // 1. 白色底圆
-                          Container(
-                            width: 36,
-                            height: 36,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.3),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                              border: Border.all(color: Colors.white, width: 2),
-                            ),
-                          ),
-                          // 2. 蓝色导航箭头图标
-                          const Icon(
-                            Icons.navigation,
-                            color: Colors.blueAccent,
-                            size: 24, 
-                          ),
-                        ],
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(blurRadius: 5, color: Colors.black26)
+                          ],
+                        ),
+                        child: const Icon(Icons.navigation,
+                            color: Colors.blue, size: 25),
                       ),
                     ),
                 ],
