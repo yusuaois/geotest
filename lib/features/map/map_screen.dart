@@ -8,7 +8,6 @@ import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
-import 'package:triggeo/core/services/overlay_service.dart';
 import 'package:triggeo/core/services/service_locator.dart';
 import 'package:triggeo/features/map/widgets/offline_tile_provider.dart';
 import 'package:triggeo/features/map/widgets/reminder_edit_dialog.dart'; // 确保引用了这个
@@ -33,16 +32,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(locationServiceProvider).requestPermission();
-    });
-    // 监听后台服务消息
-    FlutterBackgroundService().on('showOverlay').listen((event) {
-      if (event != null) {
-        final name = event['name'] as String;
-        final lat = event['lat'] as double;
-        final lng = event['lng'] as double;
-
-        OverlayService.showArrivalFloat(name, LatLng(lat, lng));
-      }
     });
   }
 
@@ -258,7 +247,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   color: Theme.of(context).colorScheme.onPrimaryContainer),
               onPressed: () async {
                 if (userLatLng != null) {
-                  _mapController.move(userLatLng!, 15.0);
+                  // TODO 重新放置Marker
+                  _mapController.move(userLatLng, 15.0);
                   return;
                 }
                 ScaffoldMessenger.of(context)

@@ -26,7 +26,6 @@ class _OfflineMapScreenState extends State<OfflineMapScreen> {
     setState(() => _regions = regions);
   }
 
-  // 模拟：实际项目中应该让用户在搜索栏搜索地名，并输入距离范围，然后根据输入的参数下载区域地图
   void _downloadBeijingDemo() {
     final bounds = LatLngBounds(
       const LatLng(39.99, 116.30), // 西北

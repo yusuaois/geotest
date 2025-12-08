@@ -1,54 +1,45 @@
 name: Flutter CI/CD Build
 
-# 触发条件：当代码被推送到 main 分支时
 on:
   push:
     branches:
       - main
       - master
-  # 也可以添加手动触发
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-latest # 使用最新的 Ubuntu runner
+    runs-on: ubuntu-latest 
 
     steps:
       - name: ⬇️ Checkout Repository
         uses: actions/checkout@v4
 
       - name: 🐦 Setup Flutter
-        # 使用官方 action 来安装和配置 Flutter SDK
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.29.0' # 替换为你项目使用的 Flutter 版本
+          flutter-version: '3.29.0'
           channel: 'stable'
 
       - name: 📦 Get Dependencies
-        # 安装 pubspec.yaml 中定义的所有依赖
         run: flutter pub get
 
       - name: ⚙️ Run Code Generation (build_runner)
-        # 因为你的项目使用了 Hive，所以需要运行 build_runner
         run: flutter pub run build_runner build --delete-conflicting-outputs
 
-      # --- 构建 Android APK ---
       - name: 🏗️ Build Android APK
         run: flutter build apk --release
         
       - name: ⬆️ Upload Release APK
-        # 将生成的 APK 文件上传为 Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
 
-      # --- 构建 Android AppBundle (推荐用于 Play Store) ---
       - name: 🏗️ Build Android AppBundle (AAB)
         run: flutter build appbundle --release
         
       - name: ⬆️ Upload Release AAB
-        # 将生成的 AAB 文件上传为 Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: release-aab
