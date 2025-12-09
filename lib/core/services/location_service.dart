@@ -7,9 +7,9 @@ import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:http/http.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:audioplayers/audioplayers.dart'; // 引入音频播放
+import 'package:triggeo/data/models/download_task.dart';
 import 'package:triggeo/data/models/offline_region.dart';
 import 'package:vibration/vibration.dart'; // 引入震动
 import 'package:triggeo/data/models/reminder_location.dart';
@@ -23,11 +23,11 @@ void onStart(ServiceInstance service) async {
 
   // 1. 初始化 Hive 和 Adapter
   await Hive.initFlutter();
-  if (!Hive.isAdapterRegistered(0))
-    Hive.registerAdapter(ReminderLocationAdapter());
+  if (!Hive.isAdapterRegistered(0)) Hive.registerAdapter(ReminderLocationAdapter());
   if (!Hive.isAdapterRegistered(1)) Hive.registerAdapter(ReminderTypeAdapter());
-  if (!Hive.isAdapterRegistered(2))
-    Hive.registerAdapter(OfflineRegionAdapter());
+  if (!Hive.isAdapterRegistered(2)) Hive.registerAdapter(OfflineRegionAdapter());
+  if (!Hive.isAdapterRegistered(3)) Hive.registerAdapter(TaskStatusAdapter());
+  if (!Hive.isAdapterRegistered(4)) Hive.registerAdapter(DownloadTaskAdapter());
 
   // 2. 打开所有需要的 Box
   await Hive.openBox<ReminderLocation>(ReminderRepository.boxName);

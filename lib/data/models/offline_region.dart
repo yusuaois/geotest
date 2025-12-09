@@ -4,14 +4,13 @@ import 'package:latlong2/latlong.dart';
 
 part 'offline_region.g.dart';
 
-@HiveType(typeId: 2) // 确保 typeId 不冲突
+// 确保 typeId 唯一，不要与其他模型冲突
+@HiveType(typeId: 2) 
 class OfflineRegion extends HiveObject {
   @HiveField(0)
-  final String id; // 唯一ID (如 UUID)
-  
+  final String id;
   @HiveField(1)
-  final String name; // 城市名 (如 "Beijing")
-  
+  final String name;
   @HiveField(2)
   final double minLat;
   @HiveField(3)
@@ -20,23 +19,16 @@ class OfflineRegion extends HiveObject {
   final double minLon;
   @HiveField(5)
   final double maxLon;
-  
   @HiveField(6)
   final int minZoom;
   @HiveField(7)
   final int maxZoom;
-  
   @HiveField(8)
   final int tileCount;
-  
   @HiveField(9)
-  final double sizeInMB; // 估算或实际大小
-  
+  final double sizeInMB;
   @HiveField(10)
   final DateTime downloadDate;
-
-  // 辅助方法：获取 LatLngBounds
-  LatLngBounds get bounds => LatLngBounds(LatLng(maxLat, minLon), LatLng(minLat, maxLon));
 
   OfflineRegion({
     required this.id,
@@ -45,10 +37,15 @@ class OfflineRegion extends HiveObject {
     required this.maxLat,
     required this.minLon,
     required this.maxLon,
-    this.minZoom = 10,
-    this.maxZoom = 14,
+    required this.minZoom,
+    required this.maxZoom,
     required this.tileCount,
-    this.sizeInMB = 0,
+    required this.sizeInMB,
     required this.downloadDate,
   });
+
+  LatLngBounds get bounds => LatLngBounds(
+    LatLng(maxLat, minLon), 
+    LatLng(minLat, maxLon)
+  );
 }

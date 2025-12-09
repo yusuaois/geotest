@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:dynamic_color/dynamic_color.dart';
+import 'package:triggeo/data/models/download_task.dart';
+import 'package:triggeo/data/models/offline_region.dart';
+import 'package:triggeo/data/models/reminder_location.dart';
 import 'package:triggeo/data/repositories/reminder_repository.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/location_service.dart';
@@ -12,6 +15,13 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   await Hive.initFlutter();
+
+  Hive.registerAdapter(ReminderLocationAdapter()); 
+  Hive.registerAdapter(ReminderTypeAdapter());
+  Hive.registerAdapter(OfflineRegionAdapter());
+  Hive.registerAdapter(TaskStatusAdapter());
+  Hive.registerAdapter(DownloadTaskAdapter());
+  
   await ReminderRepository.init();
 
   // 打开设置存储箱
