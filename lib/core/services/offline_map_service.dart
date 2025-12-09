@@ -10,13 +10,16 @@ import 'package:latlong2/latlong.dart';
 import 'package:triggeo/core/utils/tile_math.dart';
 import 'package:triggeo/data/models/download_task.dart';
 import 'package:triggeo/data/models/offline_region.dart';
+import 'package:triggeo/core/services/notification_service.dart';
 import 'package:uuid/uuid.dart';
 import 'package:http/http.dart' as http;
 
 class OfflineMapService {
   final Dio _dio = Dio();
+  final NotificationService _notificationService = NotificationService();
   static const String _taskBoxName = 'download_tasks';
   static const String _regionBoxName = 'offline_regions';
+  static const int _notificationId = 888;
   
   // 并发控制：同时下载 5 个瓦片
   static const int _maxConcurrency = 5;
@@ -27,6 +30,8 @@ class OfflineMapService {
   
   // 监听器（用于通知UI更新）
   final StreamController<List<DownloadTask>> _tasksController = StreamController.broadcast();
+
+  OfflineMapService(NotificationService notificationService);
   Stream<List<DownloadTask>> get tasksStream => _tasksController.stream;
 
   // --- 初始化 ---
@@ -75,25 +80,61 @@ class OfflineMapService {
     _startDownload(task, urlTemplate);
   }
 
+  void _updateGlobalProgress() {
+    if (!Hive.isBoxOpen(_taskBoxName)) return;
+    
+    final allTasks = Hive.box<DownloadTask>(_taskBoxName).values;
+    // 获取所有正在下载或等待的任务（作为分母）
+    // 或者只获取状态为 downloading 的任务？
+    // 通常用户希望看到所有活跃任务的总进度
+    final activeTasks = allTasks.where((t) => 
+      t.status == TaskStatus.downloading || t.status == TaskStatus.pending
+    ).toList();
+
+    if (activeTasks.isEmpty) {
+      // 没有活跃任务，取消通知
+      _notificationService.cancelNotification(_notificationId);
+      return;
+    }
+
+    int totalTiles = 0;
+    int downloadedTiles = 0;
+    
+    for (var t in activeTasks) {
+      totalTiles += t.totalTiles;
+      downloadedTiles += t.downloadedTiles;
+    }
+
+    if (totalTiles == 0) return;
+
+    final percent = (downloadedTiles / totalTiles * 100).toInt();
+    
+    _notificationService.showProgressNotification(
+      id: _notificationId,
+      progress: downloadedTiles,
+      max: totalTiles,
+      title: '正在下载离线地图',
+      body: '总进度: $percent% ($downloadedTiles/$totalTiles)',
+    );
+  }
+
   // --- 2. 核心下载逻辑 (多线程 + 重试) ---
   Future<void> _startDownload(DownloadTask task, String urlTemplate) async {
-    // 状态更新
     task.status = TaskStatus.downloading;
     task.errorMessage = null;
     await task.save();
     _emitTasks();
+    
+    // 开始下载时立即更新一次通知
+    _updateGlobalProgress();
 
-    // 创建取消令牌
     final cancelToken = CancelToken();
     _cancelTokens[task.id] = cancelToken;
 
     final appDir = await getApplicationDocumentsDirectory();
     final regionDir = '${appDir.path}/offline_maps/${task.id}';
 
-    // 生成所有瓦片请求列表
     List<Map<String, dynamic>> tilesToDownload = [];
-    
-    // 遍历所有瓦片
     for (int z = task.minZoom; z <= task.maxZoom; z++) {
       var topLeft = TileMath.project(task.bounds.northWest, z);
       var bottomRight = TileMath.project(task.bounds.southEast, z);
@@ -104,22 +145,14 @@ class OfflineMapService {
       }
     }
 
-    // 已经下载过的跳过 (支持断点续传)
-    // 注意：这里为了性能，假设已下载数量是准确的，或者你可以去文件系统检查
-    int skipped = 0;
-    // 简单的并发池逻辑
     int activeWorkers = 0;
     int index = 0;
-    
-    // 保存频率控制 (避免每下一张图都写数据库)
     int saveCounter = 0;
 
     try {
       while (index < tilesToDownload.length) {
-        // 检查取消
         if (cancelToken.isCancelled) throw DioException(requestOptions: RequestOptions(), type: DioExceptionType.cancel);
         
-        // 填充并发池
         while (activeWorkers < _maxConcurrency && index < tilesToDownload.length) {
           final tile = tilesToDownload[index];
           index++;
@@ -130,43 +163,32 @@ class OfflineMapService {
           final savePath = '$regionDir/$z/$x/$y.png';
 
           if (File(savePath).existsSync()) {
-            // 文件已存在，视为已下载
-            skipped++;
-            // 如果是重新开始的任务，更新进度
-            if (task.downloadedTiles < index) {
-               task.downloadedTiles = index;
-            }
+            if (task.downloadedTiles < index) task.downloadedTiles = index;
             continue;
           }
 
           activeWorkers++;
           
-          // 启动单个下载任务 (不 await，放入 Future 列表)
-          _downloadSingleTile(
-            urlTemplate, z, x, y, savePath, cancelToken
-          ).then((_) {
+          _downloadSingleTile(urlTemplate, z, x, y, savePath, cancelToken).then((_) {
             activeWorkers--;
             task.downloadedTiles++;
             saveCounter++;
             
-            // 每下载 20 张或完成时保存一次进度
-            if (saveCounter >= 20 || task.downloadedTiles == task.totalTiles) {
+            // 每下载 10 张更新一次数据库和通知，避免 UI 和 通知栏 卡顿
+            if (saveCounter >= 10 || task.downloadedTiles == task.totalTiles) {
               task.save();
-              _emitTasks(); // 通知 UI 刷新进度条
+              _emitTasks(); 
+              _updateGlobalProgress(); // 更新通知栏
               saveCounter = 0;
             }
           }).catchError((e) {
             activeWorkers--;
-            // 这里可以记录单个失败，也可以选择让整个任务失败
-            // 目前策略：单个瓦片失败重试在 _downloadSingleTile 内部，这里收到错误说明彻底失败
-            debugPrint("Tile failed finally: $e");
+            debugPrint("Tile failed: $e");
           });
         }
-        // 等待一小会儿，避免死循环占用 CPU
         await Future.delayed(const Duration(milliseconds: 50));
       }
       
-      // 等待最后几个任务完成
       while (activeWorkers > 0) {
         await Future.delayed(const Duration(milliseconds: 100));
       }
@@ -186,6 +208,8 @@ class OfflineMapService {
       _emitTasks();
     } finally {
       _cancelTokens.remove(task.id);
+      // 任务结束（无论成功失败），检查是否还有其他任务，更新或取消通知
+      _updateGlobalProgress();
     }
   }
 

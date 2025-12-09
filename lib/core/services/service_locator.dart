@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:triggeo/core/services/offline_map_service.dart';
 import 'audio_service.dart';
 import 'location_service.dart';
 import 'notification_service.dart';
@@ -23,4 +24,10 @@ final locationServiceProvider = Provider<LocationService>((ref) {
 final currentLocationProvider = StreamProvider<Map<String, dynamic>?>((ref) {
   final locationService = ref.watch(locationServiceProvider);
   return locationService.locationStream;
+});
+
+// 5. 离线地图服务 Provider
+final offlineMapServiceProvider = Provider((ref) {
+  final notificationService = ref.watch(notificationServiceProvider);
+  return OfflineMapService(notificationService);
 });

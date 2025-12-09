@@ -90,4 +90,41 @@ class NotificationService {
       ),
     );
   }
+
+  Future<void> showProgressNotification({
+    required int id,
+    required int progress,
+    required int max,
+    required String title,
+    required String body,
+  }) async {
+    final AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+      'offline_map_download_channel', // Channel ID
+      'Map Downloads', // Channel Name
+      channelDescription: 'Shows progress of offline map downloads',
+      importance: Importance.low, // Low importance 防止每次更新都发出声音/震动
+      priority: Priority.low,
+      showProgress: true,
+      maxProgress: max,
+      progress: progress,
+      onlyAlertOnce: true, // 关键：只在第一次显示时提示，后续更新静默
+      ongoing: true, // 关键：常驻通知，用户无法侧滑清除
+      autoCancel: false,
+    );
+
+    final NotificationDetails platformChannelSpecifics =
+        NotificationDetails(android: androidPlatformChannelSpecifics);
+
+    await _notificationsPlugin.show(
+      id,
+      title,
+      body,
+      platformChannelSpecifics,
+    );
+  }
+
+  Future<void> cancelNotification(int id) async {
+    await _notificationsPlugin.cancel(id);
+  }
 }

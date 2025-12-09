@@ -3,11 +3,10 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:triggeo/core/services/offline_map_service.dart';
+import 'package:triggeo/core/services/service_locator.dart';
 import 'package:triggeo/data/models/download_task.dart';
 import 'package:triggeo/data/repositories/settings_repository.dart';
-
-// 创建一个 Provider 来获取 Service 实例 (建议在 service_locator.dart 中定义)
-final offlineMapServiceProvider = Provider((ref) => OfflineMapService());
+import 'package:triggeo/core/services/notification_service.dart';
 
 class OfflineMapScreen extends ConsumerStatefulWidget {
   const OfflineMapScreen({super.key});
