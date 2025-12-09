@@ -71,6 +71,7 @@ class OfflineMapService {
     
     final totalTiles = estimateTileCount(bounds, minZoom, maxZoom);
     int downloadedCount = 0;
+    // ignore: unused_local_variable
     int failedCount = 0;
 
     try {

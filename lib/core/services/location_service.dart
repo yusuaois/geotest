@@ -7,6 +7,7 @@ import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:http/http.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:audioplayers/audioplayers.dart'; // 引入音频播放
 import 'package:triggeo/data/models/offline_region.dart';
@@ -22,9 +23,11 @@ void onStart(ServiceInstance service) async {
 
   // 1. 初始化 Hive 和 Adapter
   await Hive.initFlutter();
-  if (!Hive.isAdapterRegistered(0))  Hive.registerAdapter(ReminderLocationAdapter());
+  if (!Hive.isAdapterRegistered(0))
+    Hive.registerAdapter(ReminderLocationAdapter());
   if (!Hive.isAdapterRegistered(1)) Hive.registerAdapter(ReminderTypeAdapter());
-  if (!Hive.isAdapterRegistered(2)) Hive.registerAdapter(OfflineRegionAdapter());;
+  if (!Hive.isAdapterRegistered(2))
+    Hive.registerAdapter(OfflineRegionAdapter());
 
   // 2. 打开所有需要的 Box
   await Hive.openBox<ReminderLocation>(ReminderRepository.boxName);
@@ -40,6 +43,15 @@ void onStart(ServiceInstance service) async {
   final Map<String, DateTime> cooldowns = {};
 
   service.on('stopService').listen((event) => service.stopSelf());
+
+  // 获取初始位置
+  final Position initialPosition = await Geolocator.getCurrentPosition(
+    locationSettings: const LocationSettings(
+      accuracy: LocationAccuracy.high
+    ),
+  );
+  service.invoke('update',
+      {"lat": initialPosition.latitude, "lng": initialPosition.longitude});
 
   Geolocator.getPositionStream(
     locationSettings: const LocationSettings(
@@ -61,8 +73,6 @@ void onStart(ServiceInstance service) async {
     final String? customRingtonePath = settingsBox.get('custom_ringtone_path');
 
     for (var reminder in reminderBox.values.where((r) => r.isActive)) {
-      // debug Reminder 的名字
-      print('Reminder: ${reminder.name}');
 
       final targetLoc = LatLng(reminder.latitude, reminder.longitude);
 

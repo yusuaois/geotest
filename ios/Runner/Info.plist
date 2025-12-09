@@ -49,5 +49,9 @@
 		<string>我们需要您的位置来显示地图和触发提醒。</string>
 		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 		<string>我们需要后台定位以确保在您到达目的地时通知您。</string>
+		<key>UIBackgroundModes</key>
+		<array>
+			<string>location</string>
+		</array>
 	</dict>
 </plist>

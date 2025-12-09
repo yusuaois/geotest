@@ -224,7 +224,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             builder: (context, ref, child) {
               final settingsRepo = ref.watch(settingsRepositoryProvider);
               final currentIndex = settingsRepo.getCurrentTileSourceIndex();
-              final theme = Theme.of(context);
+              Theme.of(context);
 
               return ListTile(
                 title: const Text("地图源"),

@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
@@ -69,9 +68,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   @override
   Widget build(BuildContext context) {
     final locationAsync = ref.watch(currentLocationProvider);
-    final selectionState = ref.watch(mapControllerProvider);
+    ref.watch(mapControllerProvider);
     final tileUrl = ref.watch(tileUrlProvider);
-    // mapNotifier 不需要了，因为我们直接用 Dialog，不再需要 MapController 的 selectLocation
 
     // 1. Extract LatLng directly. If loading or error, it remains null.
     LatLng? userLatLng;
@@ -90,8 +88,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       });
       _hasAutoCentered = true;
     }
-
-    // 这里不再计算 distanceInfo，因为信息现在显示在弹窗里了
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
@@ -128,10 +124,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   // It updates automatically whenever userLatLng changes (via ref.watch).
                   if (userLatLng != null)
                     Marker(
-                      point: userLatLng!,
+                      point: userLatLng,
                       width: 40,
                       height: 40,
-                      // Using key helps Flutter optimize repaints
                       key: const ValueKey('userLocationMarker'),
                       child: Container(
                         decoration: const BoxDecoration(
@@ -212,7 +207,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(10),
-                      boxShadow: [
+                      boxShadow: const [
                         BoxShadow(color: Colors.black12, blurRadius: 4)
                       ],
                     ),
@@ -253,6 +248,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               child: Icon(Icons.my_location,
                   color: Theme.of(context).colorScheme.onPrimaryContainer),
               onPressed: () async {
+                final position = await Geolocator.getCurrentPosition();
+                userLatLng = LatLng(position.latitude, position.longitude);
                 if (userLatLng != null) {
                   _mapController.move(userLatLng!, 15.0);
                   return;
@@ -275,8 +272,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               },
             ),
           ),
-
-          // ❌ 已删除：这里原本有一个多余的 FlutterMap，导致了覆盖问题
         ],
       ),
       floatingActionButton: FloatingActionButton(
