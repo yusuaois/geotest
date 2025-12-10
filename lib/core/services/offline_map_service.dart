@@ -21,27 +21,18 @@ class OfflineMapService {
   static const String _regionBoxName = 'offline_regions';
   static const int _notificationId = 888;
   
-  // 并发控制：同时下载 5 个瓦片
   static const int _maxConcurrency = 5;
-  
-  // 内存中缓存 CancelToken，用于取消正在进行的请求
-  // Key: TaskID
   final Map<String, CancelToken> _cancelTokens = {};
-  
-  // 监听器（用于通知UI更新）
   final StreamController<List<DownloadTask>> _tasksController = StreamController.broadcast();
 
   OfflineMapService(NotificationService notificationService);
   Stream<List<DownloadTask>> get tasksStream => _tasksController.stream;
 
-  // --- 初始化 ---
   Future<void> init() async {
     if (!Hive.isBoxOpen(_taskBoxName)) await Hive.openBox<DownloadTask>(_taskBoxName);
     if (!Hive.isBoxOpen(_regionBoxName)) await Hive.openBox<OfflineRegion>(_regionBoxName);
     _emitTasks();
   }
-
-  // --- 1. 创建任务 (入队) ---
   Future<void> createTask({
     required String cityName,
     required LatLngBounds bounds,
@@ -52,7 +43,7 @@ class OfflineMapService {
     final box = Hive.box<DownloadTask>(_taskBoxName);
     final taskId = const Uuid().v4();
     
-    // 估算瓦片数
+    // Calculate the total number of tiles to download
     int total = 0;
     for (int z = minZoom; z <= maxZoom; z++) {
       var topLeft = TileMath.project(bounds.northWest, z);
@@ -75,8 +66,6 @@ class OfflineMapService {
 
     await box.put(taskId, task);
     _emitTasks();
-    
-    // 自动开始下载
     _startDownload(task, urlTemplate);
   }
 
@@ -84,15 +73,12 @@ class OfflineMapService {
     if (!Hive.isBoxOpen(_taskBoxName)) return;
     
     final allTasks = Hive.box<DownloadTask>(_taskBoxName).values;
-    // 获取所有正在下载或等待的任务（作为分母）
-    // 或者只获取状态为 downloading 的任务？
-    // 通常用户希望看到所有活跃任务的总进度
+    // Calculate the global progress
     final activeTasks = allTasks.where((t) => 
       t.status == TaskStatus.downloading || t.status == TaskStatus.pending
     ).toList();
 
     if (activeTasks.isEmpty) {
-      // 没有活跃任务，取消通知
       _notificationService.cancelNotification(_notificationId);
       return;
     }

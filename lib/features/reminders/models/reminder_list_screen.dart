@@ -40,7 +40,6 @@ class ReminderListScreen extends ConsumerWidget {
                     item.isActive = val;
                     item.save();
                   },
-                  // 新增：长按修改
                   secondary: IconButton(
                     icon: const Icon(Icons.edit),
                     onPressed: () {

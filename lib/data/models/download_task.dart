@@ -4,7 +4,7 @@ import 'package:latlong2/latlong.dart';
 
 part 'download_task.g.dart';
 
-@HiveType(typeId: 3) // 使用新的 ID
+@HiveType(typeId: 3) 
 enum TaskStatus {
   @HiveField(0) pending,
   @HiveField(1) downloading,
@@ -17,7 +17,7 @@ enum TaskStatus {
 @HiveType(typeId: 4)
 class DownloadTask extends HiveObject {
   @HiveField(0)
-  final String id; // 任务/区域ID
+  final String id; 
   
   @HiveField(1)
   final String regionName;

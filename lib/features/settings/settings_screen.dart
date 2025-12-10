@@ -10,7 +10,6 @@ import 'package:triggeo/features/settings/offline_map_screen.dart';
 import 'package:triggeo/features/settings/theme_controller.dart';
 import 'package:triggeo/data/repositories/settings_repository.dart';
 
-// 定义提醒方式枚举 (建议放在单独的 model 文件中，这里为了方便直接展示)
 enum GlobalReminderType { ringtone, vibration, both }
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -21,10 +20,8 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  // 设置存储 Box
   late Box _settingsBox;
 
-  // 状态变量
   GlobalReminderType _reminderType = GlobalReminderType.both;
   String? _customRingtonePath;
 
@@ -37,10 +34,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Future<void> _loadSettings() async {
     _settingsBox = Hive.box('settings_box');
     setState(() {
-      // 读取提醒方式，默认为 both (index 2)
       int typeIndex = _settingsBox.get('reminder_type', defaultValue: 2);
       _reminderType = GlobalReminderType.values[typeIndex];
-      // 读取自定义铃声路径
       _customRingtonePath = _settingsBox.get('custom_ringtone_path');
     });
   }
@@ -58,7 +53,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       final sourceFile = File(result.files.single.path!);
       final appDir = await getApplicationDocumentsDirectory();
 
-      // 重命名并保存到应用目录 (使用时间戳防止重名)
       final fileName =
           'ringtone_${DateTime.now().millisecondsSinceEpoch}${path.extension(sourceFile.path)}';
       final savedFile = await sourceFile.copy('${appDir.path}/$fileName');
@@ -67,7 +61,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         _customRingtonePath = savedFile.path;
       });
 
-      // 持久化存储路径
       await _settingsBox.put('custom_ringtone_path', savedFile.path);
 
       if (mounted) {
@@ -90,7 +83,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         children: [
           _buildSectionHeader(context, "提醒配置"),
 
-          // --- 1. 提醒方式选择 ---
+          // Notification
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Column(
@@ -119,7 +112,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           const Divider(),
 
-          // --- 2. 自定义铃声管理 ---
+          // Custom Ringtone
           ListTile(
             leading: const Icon(Icons.music_note),
             title: const Text("选择自定义铃声"),
@@ -134,7 +127,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             leading: const Icon(Icons.play_circle_fill),
             title: const Text("测试当前配置"),
             onTap: () async {
-              // 根据当前设置测试播放/震动
               if ((_reminderType == GlobalReminderType.ringtone ||
                       _reminderType == GlobalReminderType.both) &&
                   _customRingtonePath != null) {
@@ -149,7 +141,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           const Divider(),
           _buildSectionHeader(context, "外观"),
-          // ... (保留原有的外观设置代码) ...
           SwitchListTile(
             title: const Text("动态取色 (Material You)"),
             subtitle: const Text("跟随系统壁纸颜色 (仅Android 12+)"),
@@ -204,7 +195,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ),
 
-          // ... 其他外观组件 ...
           const Divider(),
           _buildSectionHeader(context, "地图数据"), // New Section Header
           ListTile(
@@ -233,10 +223,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   initialValue: currentIndex,
                   onSelected: (index) async {
                     await settingsRepo.setTileSource(index);
-                    // 强制刷新整个应用或通知相关 Provider 更新（视 Riverpod 结构而定）
                     setState(() {});
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("地图源已切换，重启应用或重新进入地图页生效")),
+                      const SnackBar(content: Text("地图源已切换，重启应用生效")),
                     );
                   },
                   itemBuilder: (context) =>

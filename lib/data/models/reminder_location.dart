@@ -1,7 +1,7 @@
 import 'package:hive/hive.dart';
 import 'package:uuid/uuid.dart';
 
-part 'reminder_location.g.dart'; // 生成文件的名字
+part 'reminder_location.g.dart'; 
 
 @HiveType(typeId: 1)
 enum ReminderType {
@@ -16,7 +16,7 @@ class ReminderLocation extends HiveObject {
   @HiveField(1) String name;
   @HiveField(2) double latitude;
   @HiveField(3) double longitude;
-  @HiveField(4) double radius; // 触发半径
+  @HiveField(4) double radius; 
   @HiveField(5) bool isActive;
   @HiveField(6) ReminderType type;
 

@@ -24,13 +24,12 @@ void main() async {
   
   await ReminderRepository.init();
 
-  // 打开设置存储箱
+  // Open the settings box
   await Hive.openBox('settings_box');
   
-  // 初始化核心服务
+  // Initialize services
   final notificationService = NotificationService();
   await notificationService.initialize();
-  
   final locationService = LocationService();
   await locationService.initialize();
 
@@ -41,27 +40,25 @@ void main() async {
   );
 }
 
-class TriggeoApp extends ConsumerWidget { // 改为 ConsumerWidget 以监听 Riverpod
+class TriggeoApp extends ConsumerWidget { 
   const TriggeoApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // 1. 监听主题状态
     final themeState = ref.watch(themeControllerProvider);
 
     return DynamicColorBuilder(
       builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
         
-        // 2. 决定使用哪个 ColorScheme
         ColorScheme lightScheme;
         ColorScheme darkScheme;
 
         if (lightDynamic != null && darkDynamic != null && themeState.useDynamicColor) {
-          // A. 如果系统支持动态色且用户开启了开关 -> 使用系统色
+          // If support dynamic color and enabled in settings
           lightScheme = lightDynamic.harmonized();
           darkScheme = darkDynamic.harmonized();
         } else {
-          // B. 否则 -> 使用自定义种子颜色生成
+          // Fallback to custom seed color
           lightScheme = ColorScheme.fromSeed(
             seedColor: themeState.customSeedColor,
           );
@@ -73,19 +70,18 @@ class TriggeoApp extends ConsumerWidget { // 改为 ConsumerWidget 以监听 Riv
 
         return MaterialApp.router(
           title: 'Triggeo',
-          // 3. 配置浅色主题
+          // Light and dark theme
           theme: ThemeData(
             useMaterial3: true,
             colorScheme: lightScheme,
-            // 可以在这里统一配置 AppBar, Card 等组件样式
+            // Global AppBar Theme
             appBarTheme: AppBarTheme(
               centerTitle: true,
               backgroundColor: lightScheme.surface,
-              surfaceTintColor: Colors.transparent, // 避免滚动时变色
+              surfaceTintColor: Colors.transparent,
             ),
           ),
           
-          // 4. 配置深色主题
           darkTheme: ThemeData(
             useMaterial3: true,
             colorScheme: darkScheme,
@@ -96,7 +92,6 @@ class TriggeoApp extends ConsumerWidget { // 改为 ConsumerWidget 以监听 Riv
             ),
           ),
           
-          // 5. 决定当前显示模式
           themeMode: _getThemeMode(themeState.mode),
           
           routerConfig: router,
@@ -105,7 +100,6 @@ class TriggeoApp extends ConsumerWidget { // 改为 ConsumerWidget 以监听 Riv
     );
   }
 
-  // 辅助方法：将内部枚举转换为 Flutter ThemeMode
   ThemeMode _getThemeMode(AppThemeMode mode) {
     switch (mode) {
       case AppThemeMode.system:

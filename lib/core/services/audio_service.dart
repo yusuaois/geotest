@@ -6,9 +6,9 @@ import 'package:flutter/foundation.dart';
 class AudioService {
   final AudioPlayer _audioPlayer = AudioPlayer();
 
-  /// 播放指定路径的音频文件
+  /// Play audio from a custom file path
   Future<void> playCustomFile(String filePath) async {
-    await stopPlay(); // 播放前先停止
+    await stopPlay();
     try {
       if (filePath.isNotEmpty && File(filePath).existsSync()) {
         await _audioPlayer.play(DeviceFileSource(filePath));
@@ -20,14 +20,12 @@ class AudioService {
     }
   }
 
-  /// 触发震动
-  /// [pattern] 为 null 时执行默认长震动
+  /// Vibrate the device
   Future<void> vibrate({List<int>? pattern}) async {
     if (await Vibration.hasVibrator()) {
       if (pattern != null) {
         Vibration.vibrate(pattern: pattern);
       } else {
-        // 默认震动模式：等待0ms，震动1000ms，等待500ms，震动1000ms
         Vibration.vibrate(pattern: [0, 1000, 500, 1000, 500, 1000, 500, 1000, 500, 1000],amplitude: 255);
       }
     } else {
@@ -35,18 +33,18 @@ class AudioService {
     }
   }
 
-  /// 停止播放和震动
+  /// Stop the audio player and vibration
   Future<void> stop() async {
     await _audioPlayer.stop();
     Vibration.cancel();
   }
 
-  // 停止播放
+  // Stop playing audio
   Future<void> stopPlay() async {
     await _audioPlayer.stop();
   }
 
-  // 停止震动
+  // Stop vibration
   Future<void> stopVibrate() async {
     Vibration.cancel();
   }

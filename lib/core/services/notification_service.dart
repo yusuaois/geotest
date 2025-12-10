@@ -5,16 +5,16 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin _notificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
-  // 通道 ID
+  // Channel ID
   static const String channelIdBackground = 'triggeo_background_service';
   static const String channelIdAlert = 'triggeo_arrival_alert';
 
   Future<void> initialize() async {
-    // Android 初始化设置
+    // Android
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    // iOS 初始化设置
+    // iOS
     const DarwinInitializationSettings initializationSettingsDarwin =
         DarwinInitializationSettings(
       requestSoundPermission: false,
@@ -29,7 +29,6 @@ class NotificationService {
 
     await _notificationsPlugin.initialize(initializationSettings);
 
-    // 创建后台服务通知通道 (Android)
     await _createNotificationChannel(
       channelIdBackground,
       '后台运行服务',
@@ -37,11 +36,10 @@ class NotificationService {
       Importance.low,
     );
 
-    // 创建到达提醒通知通道 (Android)
     await _createNotificationChannel(
       channelIdAlert,
       '位置到达提醒',
-      '当你到达目的地时发出提醒',
+      '当到达目的地时发出提醒',
       Importance.max,
       playSound: true,
     );
@@ -65,7 +63,6 @@ class NotificationService {
     }
   }
 
-  // 发送到达提醒
   Future<void> showArrivalNotification({
     required int id,
     required String title,
@@ -81,7 +78,7 @@ class NotificationService {
           '位置到达提醒',
           importance: Importance.max,
           priority: Priority.high,
-          fullScreenIntent: true, // 类似闹钟的全屏提醒
+          fullScreenIntent: true, 
         ),
         iOS: DarwinNotificationDetails(
           presentAlert: true,
@@ -103,13 +100,13 @@ class NotificationService {
       'offline_map_download_channel', // Channel ID
       'Map Downloads', // Channel Name
       channelDescription: 'Shows progress of offline map downloads',
-      importance: Importance.low, // Low importance 防止每次更新都发出声音/震动
+      importance: Importance.low,
       priority: Priority.low,
       showProgress: true,
       maxProgress: max,
       progress: progress,
-      onlyAlertOnce: true, // 关键：只在第一次显示时提示，后续更新静默
-      ongoing: true, // 关键：常驻通知，用户无法侧滑清除
+      onlyAlertOnce: true, 
+      ongoing: true, 
       autoCancel: false,
     );
 

@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:triggeo/core/services/offline_map_service.dart';
 import 'package:triggeo/core/services/service_locator.dart';
 import 'package:triggeo/data/models/download_task.dart';
 import 'package:triggeo/data/repositories/settings_repository.dart';
-import 'package:triggeo/core/services/notification_service.dart';
 
 class OfflineMapScreen extends ConsumerStatefulWidget {
   const OfflineMapScreen({super.key});
@@ -28,11 +26,9 @@ class _OfflineMapScreenState extends ConsumerState<OfflineMapScreen>
   void initState() {
     super.initState();
     _service = ref.read(offlineMapServiceProvider);
-    _service.init(); // 确保 Box 打开
+    _service.init();
     _tabController = TabController(length: 2, vsync: this);
   }
-
-  // ... 搜索逻辑与之前类似，略微调整 _startDownload ...
 
   void _startDownload(Map<String, dynamic> cityData) {
     final urlTemplate =
@@ -41,7 +37,6 @@ class _OfflineMapScreenState extends ConsumerState<OfflineMapScreen>
     const int minZ = 10;
     const int maxZ = 14;
 
-    // 调用新的 createTask
     _service.createTask(
       cityName: cityData['name'],
       bounds: bounds,
@@ -52,7 +47,7 @@ class _OfflineMapScreenState extends ConsumerState<OfflineMapScreen>
 
     ScaffoldMessenger.of(context)
         .showSnackBar(const SnackBar(content: Text("已加入下载队列")));
-    _tabController.animateTo(1); // 跳到任务列表
+    _tabController.animateTo(1);
   }
 
   @override
@@ -68,91 +63,80 @@ class _OfflineMapScreenState extends ConsumerState<OfflineMapScreen>
       body: TabBarView(
         controller: _tabController,
         children: [
-          // Tab 1: 搜索 (UI代码保持之前逻辑，不再赘述)
-          _buildSearchTab(),
-
-          // Tab 2: 任务列表 (使用 StreamBuilder 监听进度)
-          _buildTaskList(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSearchTab() {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
+          // SearchBar
+          Column(
             children: [
-              Expanded(
-                child: TextField(
-                  controller: _searchCtrl,
-                  decoration: const InputDecoration(
-                    hintText: "输入城市名称 (如: Beijing, Shanghai)",
-                    border: OutlineInputBorder(),
-                    suffixIcon: Icon(Icons.search),
-                  ),
-                  onSubmitted: (_) => _doSearch(),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _searchCtrl,
+                        decoration: const InputDecoration(
+                          hintText: "输入城市名称 (如: 北京, 上海)",
+                          border: OutlineInputBorder(),
+                          suffixIcon: Icon(Icons.search),
+                        ),
+                        onSubmitted: (_) => _doSearch(),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    FilledButton(onPressed: _doSearch, child: const Text("搜索")),
+                  ],
                 ),
               ),
-              const SizedBox(width: 8),
-              FilledButton(onPressed: _doSearch, child: const Text("搜索")),
+              if (_isSearching) const LinearProgressIndicator(),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: _searchResults.length,
+                  itemBuilder: (context, index) {
+                    final item = _searchResults[index];
+                    return ListTile(
+                      title: Text(item['name'].split(',')[0],
+                          style: const TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: Text(item['name'],
+                          maxLines: 1, overflow: TextOverflow.ellipsis),
+                      trailing: const Icon(Icons.download),
+                      onTap: () => _startDownload(item),
+                    );
+                  },
+                ),
+              ),
             ],
           ),
-        ),
-        if (_isSearching) const LinearProgressIndicator(),
-        Expanded(
-          child: ListView.builder(
-            itemCount: _searchResults.length,
-            itemBuilder: (context, index) {
-              final item = _searchResults[index];
-              return ListTile(
-                title: Text(item['name'].split(',')[0],
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Text(item['name'],
-                    maxLines: 1, overflow: TextOverflow.ellipsis),
-                trailing: const Icon(Icons.download),
-                onTap: () => _startDownload(item),
+
+          // Task List
+          StreamBuilder<List<DownloadTask>>(
+            stream: _service.tasksStream,
+            initialData: _service.getAllTasks(),
+            builder: (context, snapshot) {
+              final tasks = snapshot.data ?? [];
+              if (tasks.isEmpty) return const Center(child: Text("暂无下载任务"));
+              final reversedTasks = tasks.reversed.toList();
+
+              return ListView.builder(
+                itemCount: reversedTasks.length,
+                itemBuilder: (context, index) {
+                  final task = reversedTasks[index];
+                  return _buildTaskItem(task);
+                },
               );
             },
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   Future<void> _doSearch() async {
     if (_searchCtrl.text.isEmpty) return;
     setState(() => _isSearching = true);
-    // 这里如果做国际化，可以尝试拼写 'China' 等
     final results = await _service.searchCity(_searchCtrl.text);
     setState(() {
       _searchResults = results;
       _isSearching = false;
     });
-  }
-
-  Widget _buildTaskList() {
-    return StreamBuilder<List<DownloadTask>>(
-      stream: _service.tasksStream,
-      initialData: _service.getAllTasks(),
-      builder: (context, snapshot) {
-        final tasks = snapshot.data ?? [];
-        if (tasks.isEmpty) return const Center(child: Text("暂无下载任务"));
-        
-        // 倒序排列，新的在上面
-        final reversedTasks = tasks.reversed.toList();
-
-        return ListView.builder(
-          itemCount: reversedTasks.length,
-          itemBuilder: (context, index) {
-            final task = reversedTasks[index];
-            return _buildTaskItem(task);
-          },
-        );
-      },
-    );
   }
 
   Widget _buildTaskItem(DownloadTask task) {

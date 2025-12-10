@@ -21,34 +21,31 @@ import 'package:triggeo/core/services/notification_service.dart'; // 确保引�
 void onStart(ServiceInstance service) async {
   DartPluginRegistrant.ensureInitialized();
 
-  // 1. 初始化 Hive 和 Adapter
   await Hive.initFlutter();
-  if (!Hive.isAdapterRegistered(0)) Hive.registerAdapter(ReminderLocationAdapter());
+  if (!Hive.isAdapterRegistered(0))
+    Hive.registerAdapter(ReminderLocationAdapter());
   if (!Hive.isAdapterRegistered(1)) Hive.registerAdapter(ReminderTypeAdapter());
-  if (!Hive.isAdapterRegistered(2)) Hive.registerAdapter(OfflineRegionAdapter());
+  if (!Hive.isAdapterRegistered(2))
+    Hive.registerAdapter(OfflineRegionAdapter());
   if (!Hive.isAdapterRegistered(3)) Hive.registerAdapter(TaskStatusAdapter());
   if (!Hive.isAdapterRegistered(4)) Hive.registerAdapter(DownloadTaskAdapter());
 
-  // 2. 打开所有需要的 Box
   await Hive.openBox<ReminderLocation>(ReminderRepository.boxName);
-  await Hive.openBox('settings_box'); // 打开设置盒子
+  await Hive.openBox('settings_box');
 
   final notificationPlugin = FlutterLocalNotificationsPlugin();
   final reminderBox = Hive.box<ReminderLocation>(ReminderRepository.boxName);
   final settingsBox = Hive.box('settings_box');
 
-  // 初始化音频播放器 (后台专用)
   final audioPlayer = AudioPlayer();
 
   final Map<String, DateTime> cooldowns = {};
 
   service.on('stopService').listen((event) => service.stopSelf());
 
-  // 获取初始位置
+  //Get the initial position
   final Position initialPosition = await Geolocator.getCurrentPosition(
-    locationSettings: const LocationSettings(
-      accuracy: LocationAccuracy.high
-    ),
+    locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
   );
   service.invoke('update',
       {"lat": initialPosition.latitude, "lng": initialPosition.longitude});
@@ -66,14 +63,12 @@ void onStart(ServiceInstance service) async {
 
     final userLoc = LatLng(position.latitude, position.longitude);
 
-    // 读取最新的全局设置 (每次检测都读取，确保设置实时生效)
     // 0: ringtone, 1: vibration, 2: both
     final int reminderTypeIndex =
         settingsBox.get('reminder_type', defaultValue: 2);
     final String? customRingtonePath = settingsBox.get('custom_ringtone_path');
 
     for (var reminder in reminderBox.values.where((r) => r.isActive)) {
-
       final targetLoc = LatLng(reminder.latitude, reminder.longitude);
 
       if (GeofenceCalculator.isInRadius(userLoc, targetLoc, reminder.radius)) {
@@ -81,7 +76,7 @@ void onStart(ServiceInstance service) async {
 
         if (lastTrigger == null ||
             DateTime.now().difference(lastTrigger).inSeconds > 30) {
-          // A. 显示视觉通知
+          // A. Visual notification
           await notificationPlugin.show(
             reminder.id.hashCode,
             "📍 到达提醒: ${reminder.name}",
@@ -93,19 +88,40 @@ void onStart(ServiceInstance service) async {
                 importance: Importance.max,
                 priority: Priority.high,
                 fullScreenIntent: true,
-                playSound: false, // 我们手动控制播放，所以这里设为 false (或者设为 true 使用默认音)
+                playSound: false,
               ),
             ),
           );
 
-          // B. 触发震动
+          // B. Vibration
           if (reminderTypeIndex == 1 || reminderTypeIndex == 2) {
             if (await Vibration.hasVibrator()) {
-              Vibration.vibrate(pattern: [0, 1000, 500, 1000, 500, 1000, 500, 1000, 500, 1000, 100,200, 100, 200, 100, 200, 100,200, 100, 200],amplitude: 255);
+              Vibration.vibrate(pattern: [
+                0,
+                1000,
+                500,
+                1000,
+                500,
+                1000,
+                500,
+                1000,
+                500,
+                1000,
+                100,
+                200,
+                100,
+                200,
+                100,
+                200,
+                100,
+                200,
+                100,
+                200
+              ], amplitude: 255);
             }
           }
 
-          // C. 触发铃声
+          // C. Audio
           if (reminderTypeIndex == 0 || reminderTypeIndex == 2) {
             if (customRingtonePath != null &&
                 File(customRingtonePath).existsSync()) {
@@ -118,35 +134,30 @@ void onStart(ServiceInstance service) async {
             }
           }
 
-          // D. 显示应用内浮窗 (需要通过主隔离区通信)
-          // 发送消息给 UI Isolate
+          // D. Floatting Window
           service.invoke('showOverlay', {
             'name': reminder.name,
             'lat': reminder.latitude,
             'lng': reminder.longitude,
           });
 
-          // 更新冷却
           cooldowns[reminder.id] = DateTime.now();
         }
       } else {
-        // 离开区域移除冷却，实现“离开再进入”可再次触发
         cooldowns.remove(reminder.id);
       }
     }
   });
 }
 
-// --- 主应用使用的管理类 ---
 class LocationService {
   final service = FlutterBackgroundService();
 
   Future<void> initialize() async {
     await service.configure(
       androidConfiguration: AndroidConfiguration(
-        // 这里必须引用上面的顶级函数
         onStart: onStart,
-        autoStart: false, // 我们希望用户手动开启
+        autoStart: false,
         isForegroundMode: true,
         notificationChannelId: NotificationService.channelIdBackground,
         initialNotificationTitle: 'Triggeo 后台检测',
@@ -161,22 +172,19 @@ class LocationService {
     );
   }
 
-  // 请求权限的辅助方法
   Future<bool> requestPermission() async {
     bool serviceEnabled;
     LocationPermission permission;
 
-    // 1. 检查定位服务是否开启
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       debugPrint('定位服务未开启');
       return false;
     }
 
-    // 2. 检查权限状态
     permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
-      // 3. 如果被拒绝，发起请求
+
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
         debugPrint('定位权限被拒绝');
@@ -192,7 +200,6 @@ class LocationService {
     return true;
   }
 
-  // 启动服务
   Future<void> startService() async {
     final hasPermission = await requestPermission();
     if (hasPermission) {
@@ -200,18 +207,16 @@ class LocationService {
     }
   }
 
-  // 停止服务
   void stopService() {
     service.invoke("stopService");
   }
 
-  // 获取位置流 (供 UI 显示用)
   Stream<Map<String, dynamic>?> get locationStream {
     return service.on('update');
   }
 }
 
-// iOS 后台特殊处理
+// iOS 
 @pragma('vm:entry-point')
 bool onIosBackground(ServiceInstance service) {
   WidgetsFlutterBinding.ensureInitialized();

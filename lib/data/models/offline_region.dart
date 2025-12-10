@@ -4,7 +4,6 @@ import 'package:latlong2/latlong.dart';
 
 part 'offline_region.g.dart';
 
-// 确保 typeId 唯一，不要与其他模型冲突
 @HiveType(typeId: 2) 
 class OfflineRegion extends HiveObject {
   @HiveField(0)

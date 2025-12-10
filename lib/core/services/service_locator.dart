@@ -19,14 +19,13 @@ final locationServiceProvider = Provider<LocationService>((ref) {
   return LocationService();
 });
 
-// 4. 当前位置流 Provider (供地图 UI 使用)
-// 这是一个 StreamProvider，UI 可以直接 watch 它来获取实时坐标
+// 4. Current Location Provider
 final currentLocationProvider = StreamProvider<Map<String, dynamic>?>((ref) {
   final locationService = ref.watch(locationServiceProvider);
   return locationService.locationStream;
 });
 
-// 5. 离线地图服务 Provider
+// 5. Offline Map Service Provider
 final offlineMapServiceProvider = Provider((ref) {
   final notificationService = ref.watch(notificationServiceProvider);
   return OfflineMapService(notificationService);

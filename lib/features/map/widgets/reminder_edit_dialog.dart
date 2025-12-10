@@ -6,7 +6,7 @@ import 'package:triggeo/data/repositories/reminder_repository.dart';
 
 class ReminderEditDialog extends ConsumerStatefulWidget {
   final LatLng position;
-  final ReminderLocation? existingReminder; // 如果是编辑模式，传入此对象
+  final ReminderLocation? existingReminder;
 
   const ReminderEditDialog({
     super.key,
@@ -36,7 +36,7 @@ class _ReminderEditDialogState extends ConsumerState<ReminderEditDialog> {
       final repo = ref.read(reminderRepositoryProvider);
 
       final reminder = ReminderLocation(
-        id: widget.existingReminder?.id, // 保持 ID 不变如果是编辑
+        id: widget.existingReminder?.id,
         name: _nameController.text,
         latitude: widget.position.latitude,
         longitude: widget.position.longitude,
@@ -44,10 +44,10 @@ class _ReminderEditDialogState extends ConsumerState<ReminderEditDialog> {
         isActive: true,
       );
 
-      await repo.save(reminder); // Repository 会处理 save (put)
+      await repo.save(reminder);
 
       if (mounted) {
-        Navigator.of(context).pop(); // 关闭弹窗
+        Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content:
@@ -68,7 +68,7 @@ class _ReminderEditDialogState extends ConsumerState<ReminderEditDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. 经纬度显示
+              // Show coordinates
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
@@ -85,7 +85,7 @@ class _ReminderEditDialogState extends ConsumerState<ReminderEditDialog> {
               ),
               const SizedBox(height: 16),
 
-              // 2. 名称输入
+              // Input for name
               TextFormField(
                 controller: _nameController,
                 decoration: const InputDecoration(
@@ -97,7 +97,7 @@ class _ReminderEditDialogState extends ConsumerState<ReminderEditDialog> {
               ),
               const SizedBox(height: 16),
 
-              // 3. 半径滑块
+              // Radius slider
               Text("提醒半径: ${_radius.toInt()} 米"),
               Slider(
                 value: _radius,
