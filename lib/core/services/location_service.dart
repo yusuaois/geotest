@@ -9,6 +9,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:audioplayers/audioplayers.dart'; // 引入音频播放
+import 'package:rxdart/rxdart.dart';
 import 'package:triggeo/data/models/download_task.dart';
 import 'package:triggeo/data/models/offline_region.dart';
 import 'package:vibration/vibration.dart'; // 引入震动
@@ -184,7 +185,6 @@ class LocationService {
 
     permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
-
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
         debugPrint('定位权限被拒绝');
@@ -207,16 +207,55 @@ class LocationService {
     }
   }
 
+  Future<Map<String, dynamic>?> getCurrentPosition() async {
+    bool hasPermission = await requestPermission();
+    if (!hasPermission) return null;
+
+    try {
+      Position? position = await Geolocator.getLastKnownPosition();
+
+      position ??= await Geolocator.getCurrentPosition(
+        timeLimit: const Duration(seconds: 5),
+      );
+
+      return {
+        "lat": position.latitude,
+        "lng": position.longitude,
+      };
+    } catch (e) {
+      debugPrint("Error getting initial location: $e");
+      return null;
+    }
+  }
+
   void stopService() {
     service.invoke("stopService");
   }
 
   Stream<Map<String, dynamic>?> get locationStream {
-    return service.on('update');
+    // Future to Stream
+    final Stream<Map<String, dynamic>?> cachedStream = Stream.fromFuture(
+      Geolocator.getLastKnownPosition(),
+    ).map((position) {
+      if (position != null) {
+        debugPrint("LocationService: Used cached location");
+        return {
+          "lat": position.latitude,
+          "lng": position.longitude,
+          "source": "cached"
+        };
+      }
+      return null;
+    }).where((data) => data != null); // Filter out null values
+
+    final Stream<Map<String, dynamic>?> liveStream = service.on('update');
+
+    // cachedStream first，then liveStream
+    return Rx.concat([cachedStream, liveStream]);
   }
 }
 
-// iOS 
+// iOS
 @pragma('vm:entry-point')
 bool onIosBackground(ServiceInstance service) {
   WidgetsFlutterBinding.ensureInitialized();

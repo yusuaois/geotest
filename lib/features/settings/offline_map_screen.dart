@@ -17,6 +17,7 @@ class _OfflineMapScreenState extends ConsumerState<OfflineMapScreen>
     with SingleTickerProviderStateMixin {
   late OfflineMapService _service;
   late TabController _tabController;
+  late Future<void> _initFuture;
 
   final TextEditingController _searchCtrl = TextEditingController();
   List<Map<String, dynamic>> _searchResults = [];
@@ -26,7 +27,7 @@ class _OfflineMapScreenState extends ConsumerState<OfflineMapScreen>
   void initState() {
     super.initState();
     _service = ref.read(offlineMapServiceProvider);
-    _service.init();
+    _initFuture = _service.init();
     _tabController = TabController(length: 2, vsync: this);
   }
 
@@ -60,71 +61,82 @@ class _OfflineMapScreenState extends ConsumerState<OfflineMapScreen>
           tabs: const [Tab(text: "下载新地图"), Tab(text: "任务与已下载")],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          // SearchBar
-          Column(
+      body: FutureBuilder(
+        future: _initFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          return TabBarView(
+            controller: _tabController,
             children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _searchCtrl,
-                        decoration: const InputDecoration(
-                          hintText: "输入城市名称 (如: 北京, 上海)",
-                          border: OutlineInputBorder(),
-                          suffixIcon: Icon(Icons.search),
+              // SearchBar
+              Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _searchCtrl,
+                            decoration: const InputDecoration(
+                              hintText: "输入城市名称 (如: 北京, 上海)",
+                              border: OutlineInputBorder(),
+                              suffixIcon: Icon(Icons.search),
+                            ),
+                            onSubmitted: (_) => _doSearch(),
+                          ),
                         ),
-                        onSubmitted: (_) => _doSearch(),
-                      ),
+                        const SizedBox(width: 8),
+                        FilledButton(
+                            onPressed: _doSearch, child: const Text("搜索")),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    FilledButton(onPressed: _doSearch, child: const Text("搜索")),
-                  ],
-                ),
+                  ),
+                  if (_isSearching) const LinearProgressIndicator(),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: _searchResults.length,
+                      itemBuilder: (context, index) {
+                        final item = _searchResults[index];
+                        return ListTile(
+                          title: Text(item['name'].split(',')[0],
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold)),
+                          subtitle: Text(item['name'],
+                              maxLines: 1, overflow: TextOverflow.ellipsis),
+                          trailing: const Icon(Icons.download),
+                          onTap: () => _startDownload(item),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
-              if (_isSearching) const LinearProgressIndicator(),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: _searchResults.length,
-                  itemBuilder: (context, index) {
-                    final item = _searchResults[index];
-                    return ListTile(
-                      title: Text(item['name'].split(',')[0],
-                          style: const TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: Text(item['name'],
-                          maxLines: 1, overflow: TextOverflow.ellipsis),
-                      trailing: const Icon(Icons.download),
-                      onTap: () => _startDownload(item),
-                    );
-                  },
-                ),
+
+              // Task List
+              StreamBuilder<List<DownloadTask>>(
+                stream: _service.tasksStream,
+                initialData: _service.getAllTasks(),
+                builder: (context, snapshot) {
+                  final tasks = snapshot.data ?? [];
+                  if (tasks.isEmpty) return const Center(child: Text("暂无下载任务"));
+                  final reversedTasks = tasks.reversed.toList();
+
+                  return ListView.builder(
+                    itemCount: reversedTasks.length,
+                    itemBuilder: (context, index) {
+                      final task = reversedTasks[index];
+                      return _buildTaskItem(task);
+                    },
+                  );
+                },
               ),
             ],
-          ),
-
-          // Task List
-          StreamBuilder<List<DownloadTask>>(
-            stream: _service.tasksStream,
-            initialData: _service.getAllTasks(),
-            builder: (context, snapshot) {
-              final tasks = snapshot.data ?? [];
-              if (tasks.isEmpty) return const Center(child: Text("暂无下载任务"));
-              final reversedTasks = tasks.reversed.toList();
-
-              return ListView.builder(
-                itemCount: reversedTasks.length,
-                itemBuilder: (context, index) {
-                  final task = reversedTasks[index];
-                  return _buildTaskItem(task);
-                },
-              );
-            },
-          ),
-        ],
+          );
+        },
       ),
     );
   }

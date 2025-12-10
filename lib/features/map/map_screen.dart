@@ -32,8 +32,22 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(locationServiceProvider).requestPermission();
+      _initLocation();
     });
+  }
+
+  Future<void> _initLocation() async {
+    final locationService = ref.read(locationServiceProvider);
+    await locationService.requestPermission();
+    final initialPos = await locationService.getCurrentPosition();
+    
+    if (initialPos != null && mounted) {
+      _mapController.move(
+        LatLng(initialPos['lat'], initialPos['lng']), 
+        15.0
+      );
+      _hasAutoCentered = true;
+    }
   }
 
   Future<void> _searchPlaces(String query) async {
