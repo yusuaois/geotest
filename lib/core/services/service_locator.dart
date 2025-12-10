@@ -26,7 +26,4 @@ final currentLocationProvider = StreamProvider<Map<String, dynamic>?>((ref) {
 });
 
 // 5. Offline Map Service Provider
-final offlineMapServiceProvider = Provider((ref) {
-  final notificationService = ref.watch(notificationServiceProvider);
-  return OfflineMapService(notificationService);
-});
+final offlineMapServiceProvider = Provider((ref) => OfflineMapService());

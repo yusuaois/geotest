@@ -19,14 +19,12 @@ class OfflineMapService {
   final NotificationService _notificationService = NotificationService();
   static const String _taskBoxName = 'download_tasks';
   static const String _regionBoxName = 'offline_regions';
-  static const int _notificationId = 888;
 
   static const int _maxConcurrency = 5;
   final Map<String, CancelToken> _cancelTokens = {};
   final StreamController<List<DownloadTask>> _tasksController =
       StreamController.broadcast();
 
-  OfflineMapService(NotificationService notificationService);
   Stream<List<DownloadTask>> get tasksStream => _tasksController.stream;
 
   Future<void> init() async {
