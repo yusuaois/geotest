@@ -7,6 +7,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
+import 'package:triggeo/core/constants/global_config.dart';
 import 'package:triggeo/core/services/service_locator.dart';
 import 'package:triggeo/data/repositories/settings_repository.dart';
 import 'package:triggeo/features/map/widgets/offline_tile_provider.dart';
@@ -124,7 +125,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               TileLayer(
                 urlTemplate: tileUrl,
                 userAgentPackageName: 'com.example.triggeo',
-                tileProvider: OfflineTileProvider(),
+                tileProvider: OfflineTileProvider(offlineMapsDir: globalOfflineMapsDir),
               ),
               MarkerLayer(
                 markers: [

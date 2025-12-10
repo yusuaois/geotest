@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:dynamic_color/dynamic_color.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:triggeo/core/constants/global_config.dart';
 import 'package:triggeo/data/models/download_task.dart';
 import 'package:triggeo/data/models/offline_region.dart';
 import 'package:triggeo/data/models/reminder_location.dart';
@@ -32,6 +34,8 @@ void main() async {
   await notificationService.initialize();
   final locationService = LocationService();
   await locationService.initialize();
+  final docDir = await getApplicationDocumentsDirectory();
+  globalOfflineMapsDir = '${docDir.path}/offline_maps';
 
   runApp(
     const ProviderScope(

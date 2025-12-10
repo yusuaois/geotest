@@ -20,19 +20,23 @@ class OfflineMapService {
   static const String _taskBoxName = 'download_tasks';
   static const String _regionBoxName = 'offline_regions';
   static const int _notificationId = 888;
-  
+
   static const int _maxConcurrency = 5;
   final Map<String, CancelToken> _cancelTokens = {};
-  final StreamController<List<DownloadTask>> _tasksController = StreamController.broadcast();
+  final StreamController<List<DownloadTask>> _tasksController =
+      StreamController.broadcast();
 
   OfflineMapService(NotificationService notificationService);
   Stream<List<DownloadTask>> get tasksStream => _tasksController.stream;
 
   Future<void> init() async {
-    if (!Hive.isBoxOpen(_taskBoxName)) await Hive.openBox<DownloadTask>(_taskBoxName);
-    if (!Hive.isBoxOpen(_regionBoxName)) await Hive.openBox<OfflineRegion>(_regionBoxName);
+    if (!Hive.isBoxOpen(_taskBoxName))
+      await Hive.openBox<DownloadTask>(_taskBoxName);
+    if (!Hive.isBoxOpen(_regionBoxName))
+      await Hive.openBox<OfflineRegion>(_regionBoxName);
     _emitTasks();
   }
+
   Future<void> createTask({
     required String cityName,
     required LatLngBounds bounds,
@@ -42,13 +46,14 @@ class OfflineMapService {
   }) async {
     final box = Hive.box<DownloadTask>(_taskBoxName);
     final taskId = const Uuid().v4();
-    
+
     // Calculate the total number of tiles to download
     int total = 0;
     for (int z = minZoom; z <= maxZoom; z++) {
       var topLeft = TileMath.project(bounds.northWest, z);
       var bottomRight = TileMath.project(bounds.southEast, z);
-      total += ((bottomRight.x - topLeft.x).abs() + 1) * ((bottomRight.y - topLeft.y).abs() + 1);
+      total += ((bottomRight.x - topLeft.x).abs() + 1) *
+          ((bottomRight.y - topLeft.y).abs() + 1);
     }
 
     final task = DownloadTask(
@@ -69,38 +74,33 @@ class OfflineMapService {
     _startDownload(task, urlTemplate);
   }
 
-  void _updateGlobalProgress() {
+  Future<void> _updateTotalProgressNotification() async {
     if (!Hive.isBoxOpen(_taskBoxName)) return;
-    
-    final allTasks = Hive.box<DownloadTask>(_taskBoxName).values;
-    // Calculate the global progress
-    final activeTasks = allTasks.where((t) => 
-      t.status == TaskStatus.downloading || t.status == TaskStatus.pending
-    ).toList();
+
+    final box = Hive.box<DownloadTask>(_taskBoxName);
+    // 筛选出所有状态为 downloading 的任务
+    final activeTasks =
+        box.values.where((t) => t.status == TaskStatus.downloading).toList();
 
     if (activeTasks.isEmpty) {
-      _notificationService.cancelNotification(_notificationId);
+      // 如果没有正在下载的任务，关闭通知
+      await _notificationService.cancelDownloadNotification();
       return;
     }
 
-    int totalTiles = 0;
-    int downloadedTiles = 0;
-    
-    for (var t in activeTasks) {
-      totalTiles += t.totalTiles;
-      downloadedTiles += t.downloadedTiles;
+    int totalTilesAll = 0;
+    int downloadedTilesAll = 0;
+
+    for (var task in activeTasks) {
+      totalTilesAll += task.totalTiles;
+      downloadedTilesAll += task.downloadedTiles;
     }
 
-    if (totalTiles == 0) return;
-
-    final percent = (downloadedTiles / totalTiles * 100).toInt();
-    
-    _notificationService.showProgressNotification(
-      id: _notificationId,
-      progress: downloadedTiles,
-      max: totalTiles,
-      title: '正在下载离线地图',
-      body: '总进度: $percent% ($downloadedTiles/$totalTiles)',
+    // 调用通知服务
+    await _notificationService.showDownloadProgress(
+      progress: downloadedTilesAll,
+      total: totalTilesAll,
+      activeTasks: activeTasks.length,
     );
   }
 
@@ -110,9 +110,6 @@ class OfflineMapService {
     task.errorMessage = null;
     await task.save();
     _emitTasks();
-    
-    // 开始下载时立即更新一次通知
-    _updateGlobalProgress();
 
     final cancelToken = CancelToken();
     _cancelTokens[task.id] = cancelToken;
@@ -135,14 +132,19 @@ class OfflineMapService {
     int index = 0;
     int saveCounter = 0;
 
+    _updateTotalProgressNotification();
+
     try {
       while (index < tilesToDownload.length) {
-        if (cancelToken.isCancelled) throw DioException(requestOptions: RequestOptions(), type: DioExceptionType.cancel);
-        
-        while (activeWorkers < _maxConcurrency && index < tilesToDownload.length) {
+        if (cancelToken.isCancelled)
+          throw DioException(
+              requestOptions: RequestOptions(), type: DioExceptionType.cancel);
+
+        while (
+            activeWorkers < _maxConcurrency && index < tilesToDownload.length) {
           final tile = tilesToDownload[index];
           index++;
-          
+
           final z = tile['z'];
           final x = tile['x'];
           final y = tile['y'];
@@ -154,17 +156,20 @@ class OfflineMapService {
           }
 
           activeWorkers++;
-          
-          _downloadSingleTile(urlTemplate, z, x, y, savePath, cancelToken).then((_) {
+
+          _downloadSingleTile(urlTemplate, z, x, y, savePath, cancelToken)
+              .then((_) {
             activeWorkers--;
             task.downloadedTiles++;
             saveCounter++;
-            
-            // 每下载 10 张更新一次数据库和通知，避免 UI 和 通知栏 卡顿
-            if (saveCounter >= 10 || task.downloadedTiles == task.totalTiles) {
+
+            if (task.downloadedTiles % 5 == 0) {
+              _updateTotalProgressNotification();
+            }
+
+            if (saveCounter >= 20 || task.downloadedTiles == task.totalTiles) {
               task.save();
-              _emitTasks(); 
-              _updateGlobalProgress(); // 更新通知栏
+              _emitTasks();
               saveCounter = 0;
             }
           }).catchError((e) {
@@ -174,7 +179,7 @@ class OfflineMapService {
         }
         await Future.delayed(const Duration(milliseconds: 50));
       }
-      
+
       while (activeWorkers > 0) {
         await Future.delayed(const Duration(milliseconds: 100));
       }
@@ -182,7 +187,6 @@ class OfflineMapService {
       if (!cancelToken.isCancelled) {
         await _finishTask(task);
       }
-
     } catch (e) {
       if (CancelToken.isCancel(e as dynamic)) {
         task.status = TaskStatus.canceled;
@@ -195,14 +199,13 @@ class OfflineMapService {
     } finally {
       _cancelTokens.remove(task.id);
       // 任务结束（无论成功失败），检查是否还有其他任务，更新或取消通知
-      _updateGlobalProgress();
+      _updateTotalProgressNotification();
     }
   }
 
   // --- 3. 单个瓦片下载 (带重试) ---
-  Future<void> _downloadSingleTile(
-    String template, int z, int x, int y, String savePath, CancelToken token
-  ) async {
+  Future<void> _downloadSingleTile(String template, int z, int x, int y,
+      String savePath, CancelToken token) async {
     final url = template
         .replaceAll('{z}', z.toString())
         .replaceAll('{x}', x.toString())
@@ -214,12 +217,12 @@ class OfflineMapService {
     while (retryCount < maxRetries) {
       try {
         if (token.isCancelled) return;
-        
+
         // 确保目录存在
         await File(savePath).parent.create(recursive: true);
-        
+
         await _dio.download(
-          url, 
+          url,
           savePath,
           cancelToken: token,
           options: Options(headers: {'User-Agent': 'TriggeoApp/1.0'}),
@@ -256,14 +259,14 @@ class OfflineMapService {
       downloadDate: DateTime.now(),
     );
     await regionBox.put(task.id, region);
-    
+
     // 任务完成后，可以选择删除 Task 记录，或者保留在“已完成”列表
     // 这里我们保留 Task 记录以便显示历史
     _emitTasks();
   }
 
   // --- 5. 操作控制 (暂停/取消/删除) ---
-  
+
   // 暂停/取消下载
   Future<void> cancelTask(DownloadTask task) async {
     if (_cancelTokens.containsKey(task.id)) {
@@ -271,15 +274,15 @@ class OfflineMapService {
     }
     task.status = TaskStatus.canceled;
     await task.save();
-    
+
     // 需求：取消时清理缓存
     await _deleteLocalFiles(task.id);
-    
+
     // 从 Task 列表移除
-    task.delete(); 
+    task.delete();
     _emitTasks();
   }
-  
+
   // 删除已完成的地图
   Future<void> deleteRegion(String id) async {
     // 1. 删除文件
@@ -302,7 +305,7 @@ class OfflineMapService {
       await dir.delete(recursive: true);
     }
   }
-  
+
   // 恢复/重试任务
   Future<void> resumeTask(DownloadTask task, String urlTemplate) async {
     if (task.status == TaskStatus.downloading) return;
@@ -314,20 +317,22 @@ class OfflineMapService {
     if (!Hive.isBoxOpen(_taskBoxName)) return [];
     return Hive.box<DownloadTask>(_taskBoxName).values.toList();
   }
-  
+
   void _emitTasks() {
     if (Hive.isBoxOpen(_taskBoxName)) {
-      _tasksController.add(Hive.box<DownloadTask>(_taskBoxName).values.toList());
+      _tasksController
+          .add(Hive.box<DownloadTask>(_taskBoxName).values.toList());
     }
   }
 
-    // 搜索城市并获取边界
+  // 搜索城市并获取边界
   Future<List<Map<String, dynamic>>> searchCity(String query) async {
     final url = Uri.parse(
         'https://nominatim.openstreetmap.org/search?city=$query&format=json&limit=5');
-    
-    final response = await http.get(url, headers: {'User-Agent': 'TriggeoApp/1.0'});
-    
+
+    final response =
+        await http.get(url, headers: {'User-Agent': 'TriggeoApp/1.0'});
+
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
       return data.map((item) {
@@ -338,8 +343,12 @@ class OfflineMapService {
           'lat': double.parse(item['lat']),
           'lon': double.parse(item['lon']),
           'bounds': LatLngBounds(
-            LatLng(double.parse(bbox[1]), double.parse(bbox[2])), // NorthWest (MaxLat, MinLon) - latlong2定义可能不同，需注意
-            LatLng(double.parse(bbox[0]), double.parse(bbox[3])), // SouthEast (MinLat, MaxLon)
+            LatLng(
+                double.parse(bbox[1]),
+                double.parse(bbox[
+                    2])), // NorthWest (MaxLat, MinLon) - latlong2定义可能不同，需注意
+            LatLng(double.parse(bbox[0]),
+                double.parse(bbox[3])), // SouthEast (MinLat, MaxLon)
           )
         };
       }).toList();
@@ -353,7 +362,8 @@ class OfflineMapService {
     for (int z = minZoom; z <= maxZoom; z++) {
       var topLeft = TileMath.project(bounds.northWest, z);
       var bottomRight = TileMath.project(bounds.southEast, z);
-      count += ((bottomRight.x - topLeft.x).abs() + 1) * ((bottomRight.y - topLeft.y).abs() + 1);
+      count += ((bottomRight.x - topLeft.x).abs() + 1) *
+          ((bottomRight.y - topLeft.y).abs() + 1);
     }
     return count;
   }

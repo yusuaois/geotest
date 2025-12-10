@@ -2,21 +2,19 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:hive/hive.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:triggeo/data/models/offline_region.dart';
 
 class OfflineTileProvider extends TileProvider {
-  String? _rootDir;
+  // 必须通过构造函数传入，确保同步可用
+  final String offlineMapsDir; 
   List<OfflineRegion>? _regions;
 
-  OfflineTileProvider() {
-    _init();
+  OfflineTileProvider({required this.offlineMapsDir}) {
+    _loadRegions();
   }
 
-  Future<void> _init() async {
-    final dir = await getApplicationDocumentsDirectory();
-    _rootDir = '${dir.path}/offline_maps';
-    
+  void _loadRegions() {
+    // Hive 在 main.dart 已初始化，这里可以直接同步获取
     if (Hive.isBoxOpen('offline_regions')) {
       _regions = Hive.box<OfflineRegion>('offline_regions').values.toList();
     }
@@ -24,13 +22,16 @@ class OfflineTileProvider extends TileProvider {
 
   @override
   ImageProvider getImage(TileCoordinates coordinates, TileLayer options) {
-    // 1. Offline first
-    if (_rootDir != null && _regions != null) {
+    // 1. 离线优先：检查本地文件
+    if (_regions != null) {
       for (var region in _regions!) {
+        // 缩放级别检查
         if (coordinates.z >= region.minZoom && coordinates.z <= region.maxZoom) {
-           // Check if tile exists in offline storage: offline_maps/ID/z/x/y.png
-           final path = '$_rootDir/${region.id}/${coordinates.z}/${coordinates.x}/${coordinates.y}.png';
+           // 检查文件是否存在: offline_maps/ID/z/x/y.png
+           final path = '$offlineMapsDir/${region.id}/${coordinates.z}/${coordinates.x}/${coordinates.y}.png';
            final file = File(path);
+           
+           // sync check 是必要的，虽然可能阻塞 UI 线程微秒级，但为了正确返回 FileImage 必须这样做
            if (file.existsSync()) {
              return FileImage(file);
            }
@@ -38,7 +39,7 @@ class OfflineTileProvider extends TileProvider {
       }
     }
 
-    // 2. Fallback to online tiles
+    // 2. 网络回退
     final url = options.urlTemplate!
         .replaceAll('{z}', coordinates.z.toString())
         .replaceAll('{x}', coordinates.x.toString())
