@@ -42,8 +42,6 @@ class ThemeController extends Notifier<ThemeState> {
 
   @override
   ThemeState build() {
-    // 1. 获取 Hive Box (假设已在 main 初始化时打开，或者在这里懒加载)
-    // 注意：在实际生产中，最好将 Hive 封装在 Repository 中，这里为了简洁直接调用
     final box = Hive.box(_boxName);
 
     final int modeIndex = box.get(_keyMode, defaultValue: 0);

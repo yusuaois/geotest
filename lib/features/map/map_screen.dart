@@ -142,8 +142,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                             BoxShadow(blurRadius: 5, color: Colors.black26)
                           ],
                         ),
-                        child: const Icon(Icons.navigation,
-                            color: Colors.blue, size: 25),
+                        child: Icon(Icons.navigation,
+                            color: Theme.of(context).colorScheme.primary,
+                            size: 25),
                       ),
                     ),
                 ],
@@ -162,6 +163,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   children: [
                     Expanded(
                       child: Card(
+                        color: Theme.of(context).colorScheme.surface,
                         elevation: 4,
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(30)),
@@ -169,17 +171,24 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                           controller: _searchController,
                           decoration: InputDecoration(
                             hintText: "搜索地点...",
-                            prefixIcon: const Icon(Icons.search),
+                            prefixIcon: Icon(Icons.search,
+                                color: Theme.of(context).colorScheme.onSurface),
                             suffixIcon: _isSearching
-                                ? const SizedBox(
+                                ? SizedBox(
                                     width: 20,
                                     height: 20,
                                     child: Padding(
-                                        padding: EdgeInsets.all(10),
+                                        padding: const EdgeInsets.all(10),
                                         child: CircularProgressIndicator(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurface,
                                             strokeWidth: 2)))
                                 : IconButton(
-                                    icon: const Icon(Icons.clear),
+                                    icon: Icon(Icons.clear,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface),
                                     onPressed: () {
                                       _searchController.clear();
                                       setState(() => _searchResults = []);
@@ -193,8 +202,10 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                         ),
                       ),
                     ),
+                    const SizedBox(width: 8),
                     IconButton(
-                      icon: const Icon(Icons.settings),
+                      icon: Icon(Icons.settings,
+                          color: Theme.of(context).colorScheme.onSurface),
                       onPressed: () => context.push('/settings'),
                       style: IconButton.styleFrom(
                         backgroundColor: Theme.of(context).colorScheme.surface,
@@ -211,7 +222,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                     margin: const EdgeInsets.only(top: 5),
                     constraints: const BoxConstraints(maxHeight: 200),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(10),
                       boxShadow: const [
                         BoxShadow(color: Colors.black12, blurRadius: 4)
@@ -225,11 +236,15 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                         final place = _searchResults[index];
                         return ListTile(
                           title: Text(place['display_name'].split(',')[0],
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.bold)),
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface)),
                           subtitle: Text(place['display_name'],
                               maxLines: 1, overflow: TextOverflow.ellipsis),
-                          leading: const Icon(Icons.location_city, size: 20),
+                          leading: Icon(Icons.location_city,
+                              size: 20,
+                              color: Theme.of(context).colorScheme.onSurface),
                           onTap: () {
                             final lat = double.parse(place['lat']);
                             final lon = double.parse(place['lon']);
@@ -248,10 +263,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           // My Location
-          FloatingActionButton(
+          FloatingActionButton.small(
             heroTag: 'location_fab',
-            mini: true,
-            backgroundColor: Colors.white,
+            backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
             onPressed: _centerToCurrentLocation,
             child: Icon(
               Icons.my_location,
@@ -260,10 +274,12 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           ),
           const SizedBox(height: 16),
           // Reminder List
-          FloatingActionButton(
+          FloatingActionButton.small(
             heroTag: 'list_fab',
+            backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
             onPressed: () => context.push('/list'),
-            child: const Icon(Icons.list),
+            child:
+                Icon(Icons.list, color: Theme.of(context).colorScheme.primary),
           ),
         ],
       ),
