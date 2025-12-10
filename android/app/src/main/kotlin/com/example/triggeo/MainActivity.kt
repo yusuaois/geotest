@@ -1,4 +1,4 @@
-package com.example.triggeo
+package com.anchialc.triggeo
 
 import io.flutter.embedding.android.FlutterActivity
 

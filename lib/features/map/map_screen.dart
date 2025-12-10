@@ -40,12 +40,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     final locationService = ref.read(locationServiceProvider);
     await locationService.requestPermission();
     final initialPos = await locationService.getCurrentPosition();
-    
+
     if (initialPos != null && mounted) {
-      _mapController.move(
-        LatLng(initialPos['lat'], initialPos['lng']), 
-        15.0
-      );
+      _mapController.move(LatLng(initialPos['lat'], initialPos['lng']), 15.0);
       _hasAutoCentered = true;
     }
   }
@@ -138,8 +135,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             children: [
               TileLayer(
                 urlTemplate: tileUrl,
-                userAgentPackageName: 'com.example.triggeo',
-                tileProvider: OfflineTileProvider(offlineMapsDir: globalOfflineMapsDir),
+                userAgentPackageName: 'com.anchialc.triggeo',
+                tileProvider:
+                    OfflineTileProvider(offlineMapsDir: globalOfflineMapsDir),
               ),
               MarkerLayer(
                 markers: [
