@@ -19,7 +19,6 @@ final router = GoRouter(
     GoRoute(
       path: '/add',
       builder: (context, state) {
-        // 从 MapScreen 传递选中的坐标
         final latlng = state.extra as LatLng;
         return ReminderDetailScreen(target: latlng);
       },
