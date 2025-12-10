@@ -8,28 +8,36 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:audioplayers/audioplayers.dart'; // 引入音频播放
+import 'package:audioplayers/audioplayers.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:triggeo/data/models/download_task.dart';
 import 'package:triggeo/data/models/offline_region.dart';
-import 'package:vibration/vibration.dart'; // 引入震动
+import 'package:vibration/vibration.dart';
 import 'package:triggeo/data/models/reminder_location.dart';
 import 'package:triggeo/data/repositories/reminder_repository.dart';
 import 'package:triggeo/core/utils/geofence_calculator.dart';
-import 'package:triggeo/core/services/notification_service.dart'; // 确保引用了常量
+import 'package:triggeo/core/services/notification_service.dart';
 
 @pragma('vm:entry-point')
 void onStart(ServiceInstance service) async {
   DartPluginRegistrant.ensureInitialized();
 
   await Hive.initFlutter();
-  if (!Hive.isAdapterRegistered(0))
+  if (!Hive.isAdapterRegistered(0)) {
     Hive.registerAdapter(ReminderLocationAdapter());
-  if (!Hive.isAdapterRegistered(1)) Hive.registerAdapter(ReminderTypeAdapter());
-  if (!Hive.isAdapterRegistered(2))
+  }
+  if (!Hive.isAdapterRegistered(1)) {
+    Hive.registerAdapter(ReminderTypeAdapter());
+  }
+  if (!Hive.isAdapterRegistered(2)) {
     Hive.registerAdapter(OfflineRegionAdapter());
-  if (!Hive.isAdapterRegistered(3)) Hive.registerAdapter(TaskStatusAdapter());
-  if (!Hive.isAdapterRegistered(4)) Hive.registerAdapter(DownloadTaskAdapter());
+  }
+  if (!Hive.isAdapterRegistered(3)) {
+    Hive.registerAdapter(TaskStatusAdapter());
+  }
+  if (!Hive.isAdapterRegistered(4)) {
+    Hive.registerAdapter(DownloadTaskAdapter());
+  }
 
   await Hive.openBox<ReminderLocation>(ReminderRepository.boxName);
   await Hive.openBox('settings_box');
@@ -130,7 +138,7 @@ void onStart(ServiceInstance service) async {
                 await audioPlayer.stop();
                 await audioPlayer.play(DeviceFileSource(customRingtonePath));
               } catch (e) {
-                print("后台播放失败: $e");
+                debugPrint("后台播放失败: $e");
               }
             }
           }

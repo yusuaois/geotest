@@ -28,10 +28,12 @@ class OfflineMapService {
   Stream<List<DownloadTask>> get tasksStream => _tasksController.stream;
 
   Future<void> init() async {
-    if (!Hive.isBoxOpen(_taskBoxName))
+    if (!Hive.isBoxOpen(_taskBoxName)) {
       await Hive.openBox<DownloadTask>(_taskBoxName);
-    if (!Hive.isBoxOpen(_regionBoxName))
+    }
+    if (!Hive.isBoxOpen(_regionBoxName)) {
       await Hive.openBox<OfflineRegion>(_regionBoxName);
+    }
     _emitTasks();
   }
 
@@ -76,12 +78,12 @@ class OfflineMapService {
     if (!Hive.isBoxOpen(_taskBoxName)) return;
 
     final box = Hive.box<DownloadTask>(_taskBoxName);
-    // 筛选出所有状态为 downloading 的任务
+    // all downloading tasks
     final activeTasks =
         box.values.where((t) => t.status == TaskStatus.downloading).toList();
 
     if (activeTasks.isEmpty) {
-      // 如果没有正在下载的任务，关闭通知
+      // close notification
       await _notificationService.cancelDownloadNotification();
       return;
     }
@@ -94,7 +96,6 @@ class OfflineMapService {
       downloadedTilesAll += task.downloadedTiles;
     }
 
-    // 调用通知服务
     await _notificationService.showDownloadProgress(
       progress: downloadedTilesAll,
       total: totalTilesAll,
@@ -102,7 +103,6 @@ class OfflineMapService {
     );
   }
 
-  // --- 2. 核心下载逻辑 (多线程 + 重试) ---
   Future<void> _startDownload(DownloadTask task, String urlTemplate) async {
     task.status = TaskStatus.downloading;
     task.errorMessage = null;
@@ -134,9 +134,10 @@ class OfflineMapService {
 
     try {
       while (index < tilesToDownload.length) {
-        if (cancelToken.isCancelled)
+        if (cancelToken.isCancelled) {
           throw DioException(
               requestOptions: RequestOptions(), type: DioExceptionType.cancel);
+        }
 
         while (
             activeWorkers < _maxConcurrency && index < tilesToDownload.length) {
@@ -196,12 +197,10 @@ class OfflineMapService {
       _emitTasks();
     } finally {
       _cancelTokens.remove(task.id);
-      // 任务结束（无论成功失败），检查是否还有其他任务，更新或取消通知
       _updateTotalProgressNotification();
     }
   }
 
-  // --- 3. 单个瓦片下载 (带重试) ---
   Future<void> _downloadSingleTile(String template, int z, int x, int y,
       String savePath, CancelToken token) async {
     final url = template
@@ -216,7 +215,6 @@ class OfflineMapService {
       try {
         if (token.isCancelled) return;
 
-        // 确保目录存在
         await File(savePath).parent.create(recursive: true);
 
         await _dio.download(
@@ -225,23 +223,20 @@ class OfflineMapService {
           cancelToken: token,
           options: Options(headers: {'User-Agent': 'TriggeoApp/1.0'}),
         );
-        return; // 成功
+        return;
       } catch (e) {
         retryCount++;
-        if (retryCount >= maxRetries) rethrow; // 超过重试次数，抛出
-        // 指数退避
+        if (retryCount >= maxRetries) rethrow;
         await Future.delayed(Duration(milliseconds: 500 * (1 << retryCount)));
       }
     }
   }
 
-  // --- 4. 任务完成处理 ---
   Future<void> _finishTask(DownloadTask task) async {
     task.status = TaskStatus.completed;
     task.downloadedTiles = task.totalTiles;
     await task.save();
 
-    // 转换为 OfflineRegion (供地图使用)
     final regionBox = Hive.box<OfflineRegion>(_regionBoxName);
     final region = OfflineRegion(
       id: task.id,
@@ -257,38 +252,24 @@ class OfflineMapService {
       downloadDate: DateTime.now(),
     );
     await regionBox.put(task.id, region);
-
-    // 任务完成后，可以选择删除 Task 记录，或者保留在“已完成”列表
-    // 这里我们保留 Task 记录以便显示历史
     _emitTasks();
   }
 
-  // --- 5. 操作控制 (暂停/取消/删除) ---
-
-  // 暂停/取消下载
   Future<void> cancelTask(DownloadTask task) async {
     if (_cancelTokens.containsKey(task.id)) {
       _cancelTokens[task.id]?.cancel();
     }
     task.status = TaskStatus.canceled;
     await task.save();
-
-    // 需求：取消时清理缓存
     await _deleteLocalFiles(task.id);
-
-    // 从 Task 列表移除
     task.delete();
     _emitTasks();
   }
 
-  // 删除已完成的地图
   Future<void> deleteRegion(String id) async {
-    // 1. 删除文件
     await _deleteLocalFiles(id);
-    // 2. 删除 OfflineRegion 记录
     final rBox = Hive.box<OfflineRegion>(_regionBoxName);
     await rBox.delete(id);
-    // 3. 删除 Task 记录 (如果存在)
     final tBox = Hive.box<DownloadTask>(_taskBoxName);
     if (tBox.containsKey(id)) {
       await tBox.delete(id);
@@ -304,13 +285,11 @@ class OfflineMapService {
     }
   }
 
-  // 恢复/重试任务
   Future<void> resumeTask(DownloadTask task, String urlTemplate) async {
     if (task.status == TaskStatus.downloading) return;
     _startDownload(task, urlTemplate);
   }
 
-  // 获取任务列表 (用于 UI 初始化)
   List<DownloadTask> getAllTasks() {
     if (!Hive.isBoxOpen(_taskBoxName)) return [];
     return Hive.box<DownloadTask>(_taskBoxName).values.toList();
@@ -323,7 +302,6 @@ class OfflineMapService {
     }
   }
 
-  // 搜索城市并获取边界
   Future<List<Map<String, dynamic>>> searchCity(String query) async {
     final url = Uri.parse(
         'https://nominatim.openstreetmap.org/search?city=$query&format=json&limit=5');
@@ -334,19 +312,15 @@ class OfflineMapService {
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
       return data.map((item) {
-        // Nominatim bbox 格式: [minLat, maxLat, minLon, maxLon] (字符串数组)
+        // Nominatim bbox : [minLat, maxLat, minLon, maxLon]
         final bbox = item['boundingbox'];
         return {
           'name': item['display_name'],
           'lat': double.parse(item['lat']),
           'lon': double.parse(item['lon']),
           'bounds': LatLngBounds(
-            LatLng(
-                double.parse(bbox[1]),
-                double.parse(bbox[
-                    2])), // NorthWest (MaxLat, MinLon) - latlong2定义可能不同，需注意
-            LatLng(double.parse(bbox[0]),
-                double.parse(bbox[3])), // SouthEast (MinLat, MaxLon)
+            LatLng(double.parse(bbox[1]), double.parse(bbox[2])),
+            LatLng(double.parse(bbox[0]), double.parse(bbox[3])),
           )
         };
       }).toList();
@@ -354,7 +328,6 @@ class OfflineMapService {
     return [];
   }
 
-  // 估算瓦片数量
   int estimateTileCount(LatLngBounds bounds, int minZoom, int maxZoom) {
     int count = 0;
     for (int z = minZoom; z <= maxZoom; z++) {

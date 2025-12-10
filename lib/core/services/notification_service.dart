@@ -48,18 +48,20 @@ class NotificationService {
     );
 
     if (Platform.isAndroid) {
-      const AndroidNotificationChannel downloadChannel = AndroidNotificationChannel(
+      const AndroidNotificationChannel downloadChannel =
+          AndroidNotificationChannel(
         channelIdDownload,
         '地图下载进度',
         description: '显示离线地图下载的进度',
-        importance: Importance.low, // Low 避免每次更新进度都发出声音/震动
+        importance: Importance.low,
         playSound: false,
         enableVibration: false,
         showBadge: false,
       );
-      
+
       await _notificationsPlugin
-          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>()
           ?.createNotificationChannel(downloadChannel);
     }
   }
@@ -108,13 +110,11 @@ class NotificationService {
   }
 
   Future<void> showDownloadProgress({
-    required int progress, // 当前下载数量
-    required int total,    // 总数量
-    required int activeTasks, // 正在进行的任务数
+    required int progress,
+    required int total,
+    required int activeTasks,
   }) async {
-    // 计算百分比 (0-100)
     final int percentage = total > 0 ? ((progress / total) * 100).toInt() : 0;
-    // 确保不越界
     final int safeProgress = progress > total ? total : progress;
 
     final AndroidNotificationDetails androidPlatformChannelSpecifics =
@@ -124,11 +124,11 @@ class NotificationService {
       channelDescription: '显示离线地图下载的进度',
       importance: Importance.low,
       priority: Priority.low,
-      onlyAlertOnce: true, // 仅首次提醒，后续静默更新
-      showProgress: true,  // 显示进度条
+      onlyAlertOnce: true,
+      showProgress: true,
       maxProgress: total,
       progress: safeProgress,
-      ongoing: true,       // 常驻通知，用户无法划掉
+      ongoing: true,
       autoCancel: false,
     );
 
@@ -138,7 +138,7 @@ class NotificationService {
     await _notificationsPlugin.show(
       _downloadNotificationId,
       '正在下载离线地图 ($activeTasks 个任务)',
-      '$percentage% ($progress / $total)', // 内容文本
+      '$percentage% ($progress / $total)',
       platformChannelSpecifics,
     );
   }
