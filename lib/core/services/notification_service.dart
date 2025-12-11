@@ -15,10 +15,14 @@ class NotificationService {
   static const int _downloadNotificationId = 777;
 
   Future<void> initialize() async {
+<<<<<<< HEAD
     final status = await Permission.notification.status;
       if (!status.isGranted) {
         await Permission.notification.request();
       }
+=======
+    await _requestNotificationPermissions();
+>>>>>>> 95ddc8c7713a18b3792dd6e7584a9f7cd4eb2be5
 
     // Android
     const AndroidInitializationSettings initializationSettingsAndroid =
@@ -71,6 +75,92 @@ class NotificationService {
           .resolvePlatformSpecificImplementation<
               AndroidFlutterLocalNotificationsPlugin>()
           ?.createNotificationChannel(downloadChannel);
+    }
+  }
+
+  Future<void> _requestNotificationPermissions() async {
+    if (Platform.isIOS) {
+      // iOS: 使用 FlutterLocalNotificationsPlugin 请求权限
+      await _notificationsPlugin
+          .resolvePlatformSpecificImplementation<
+              IOSFlutterLocalNotificationsPlugin>()
+          ?.requestPermissions(
+            alert: true,
+            badge: true,
+            sound: true,
+          );
+    } else if (Platform.isAndroid) {
+      // Android 13+ 需要请求通知权限
+      if (await Permission.notification.isRestricted) {
+        // 权限被限制（家长控制等）
+        return;
+      }
+      
+      final status = await Permission.notification.status;
+      if (!status.isGranted) {
+        await Permission.notification.request();
+      }
+    }
+  }
+
+  Future<bool> hasNotificationPermission() async {
+    if (Platform.isIOS) {
+      // iOS: 检查通知权限状态
+      final settings = await _notificationsPlugin
+          .resolvePlatformSpecificImplementation<
+              IOSFlutterLocalNotificationsPlugin>()
+          ?.getNotificationAppLaunchDetails();
+      
+      if (settings == null) return false;
+      
+      return settings.didNotificationLaunchApp;
+    } else if (Platform.isAndroid) {
+      // Android: 检查通知权限
+      final status = await Permission.notification.status;
+      return status.isGranted;
+    }
+    return false;
+  }
+
+  // 显示权限引导对话框
+  Future<void> showPermissionGuide(BuildContext context) async {
+    final hasPermission = await hasNotificationPermission();
+    
+    if (!hasPermission) {
+      return showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          title: const Text('通知权限'),
+          content: const Text(
+            'Triggeo需要通知权限来：\n\n'
+            '• 在后台运行时显示位置提醒\n'
+            '• 显示地图下载进度\n'
+            '• 显示重要的应用通知\n\n'
+            '请授予通知权限以获得完整功能体验。',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('稍后'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                await openAppSettings();
+              },
+              child: const Text('去设置'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                await _requestNotificationPermissions();
+              },
+              child: const Text('授予权限'),
+            ),
+          ],
+        ),
+      );
     }
   }
 
