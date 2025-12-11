@@ -15,15 +15,6 @@ class NotificationService {
   static const int _downloadNotificationId = 777;
 
   Future<void> initialize() async {
-<<<<<<< HEAD
-    final status = await Permission.notification.status;
-      if (!status.isGranted) {
-        await Permission.notification.request();
-      }
-=======
-    await _requestNotificationPermissions();
->>>>>>> 95ddc8c7713a18b3792dd6e7584a9f7cd4eb2be5
-
     // Android
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
