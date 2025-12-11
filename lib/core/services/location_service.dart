@@ -11,7 +11,6 @@ import 'package:latlong2/latlong.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:rxdart/rxdart.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:triggeo/data/models/download_task.dart';
 import 'package:triggeo/data/models/offline_region.dart';
 import 'package:vibration/vibration.dart';
@@ -53,14 +52,6 @@ void onStart(ServiceInstance service) async {
   final Map<String, DateTime> cooldowns = {};
 
   service.on('stopService').listen((event) => service.stopSelf());
-
-  // 检查后台权限
-  final hasPermission = await _checkBackgroundLocationPermission();
-  if (!hasPermission) {
-    debugPrint("后台服务: 位置权限不足，停止服务");
-    service.stopSelf();
-    return;
-  }
 
   //Get the initial position
   try {
@@ -173,40 +164,10 @@ void onStart(ServiceInstance service) async {
   });
 }
 
-// 后台服务中的权限检查
-Future<bool> _checkBackgroundLocationPermission() async {
-  // 检查定位服务是否开启
-  bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-  if (!serviceEnabled) {
-    debugPrint('后台服务: 定位服务未开启');
-    return false;
-  }
-
-  // 检查权限
-  if (Platform.isAndroid) {
-    final status = await Permission.locationAlways.status;
-    if (status.isDenied || status.isPermanentlyDenied) {
-      debugPrint('后台服务: 需要后台定位权限');
-      return false;
-    }
-    return status.isGranted || status.isLimited;
-  } else if (Platform.isIOS) {
-    final status = await Permission.locationAlways.status;
-    if (status.isDenied || status.isPermanentlyDenied) {
-      debugPrint('后台服务: 需要后台定位权限');
-      return false;
-    }
-    return status.isGranted || status.isLimited;
-  }
-
-  return false;
-}
-
 class LocationService {
   final service = FlutterBackgroundService();
 
   Future<void> initialize() async {
-    await _requestLocationPermissions();
     await service.configure(
       androidConfiguration: AndroidConfiguration(
         onStart: onStart,
@@ -225,63 +186,12 @@ class LocationService {
     );
   }
 
-  Future<bool> requestPermission() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      if (context != null && showDialog) {
-        await _showLocationServiceDialog(context);
-      }
-      debugPrint('定位服务未开启');
-      return false;
+Future<bool> requestPermission() async {
+    final status = await Permission.location.status;
+    if (!status.isGranted) {
+      final result = await Permission.location.request();
+      return result.isGranted;
     }
-
-    // 请求前台定位权限
-    PermissionStatus status;
-
-    if (Platform.isAndroid || Platform.isIOS) {
-      // 先请求使用中的定位权限
-      status = await Permission.locationWhenInUse.status;
-
-      if (!status.isGranted && !status.isLimited) {
-        status = await Permission.locationWhenInUse.request();
-
-        if (!status.isGranted && !status.isLimited) {
-          if (context != null && showDialog) {
-            await _showLocationPermissionDialog(context);
-          }
-          debugPrint('前台定位权限被拒绝');
-          return false;
-        }
-      }
-    }
-
-    // 如果需要后台定位权限
-    if (requireBackground) {
-      final backgroundStatus = await Permission.locationAlways.status;
-
-      if (!backgroundStatus.isGranted && !backgroundStatus.isLimited) {
-        if (context != null) {
-          // 显示解释后台权限的对话框
-          final granted = await _showBackgroundPermissionDialog(context);
-          if (!granted) {
-            debugPrint('后台定位权限被拒绝');
-            return false;
-          }
-        } else {
-          // 没有context，直接请求
-          final result = await Permission.locationAlways.request();
-          if (!result.isGranted && !result.isLimited) {
-            debugPrint('后台定位权限被拒绝');
-            return false;
-          }
-        }
-      }
-    }
-
->>>>>>> 95ddc8c7713a18b3792dd6e7584a9f7cd4eb2be5
     return true;
 }
 
@@ -289,7 +199,7 @@ class LocationService {
     final hasPermission = await requestPermission();
     if (hasPermission) {
       await service.startService();
-    }
+  }
   }
 
   Future<Map<String, dynamic>?> getCurrentPosition() async {
@@ -306,8 +216,6 @@ class LocationService {
       return {
         "lat": position.latitude,
         "lng": position.longitude,
-        "accuracy": position.accuracy,
-        "timestamp": position.timestamp?.millisecondsSinceEpoch,
       };
     } catch (e) {
       debugPrint("Error getting current location: $e");

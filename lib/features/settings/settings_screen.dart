@@ -5,8 +5,6 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
-import 'package:url_launcher/url_launcher.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:triggeo/core/services/service_locator.dart';
 import 'package:triggeo/features/settings/offline_map_screen.dart';
 import 'package:triggeo/features/settings/theme_controller.dart';
@@ -26,26 +24,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   GlobalReminderType _reminderType = GlobalReminderType.both;
   String? _customRingtonePath;
-  PackageInfo _packageInfo = PackageInfo(
-    appName: 'Unknown',
-    packageName: 'Unknown',
-    version: 'Unknown',
-    buildNumber: 'Unknown',
-    buildSignature: 'Unknown',
-  );
 
   @override
   void initState() {
     super.initState();
     _loadSettings();
-    _initPackageInfo();
-  }
-
-  Future<void> _initPackageInfo() async {
-    final info = await PackageInfo.fromPlatform();
-    setState(() {
-      _packageInfo = info;
-    });
   }
 
   Future<void> _loadSettings() async {
@@ -88,16 +71,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
-  void _navigateToAboutPage() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => AboutScreen(
-          packageInfo: _packageInfo,
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final themeState = ref.watch(themeControllerProvider);
@@ -105,16 +78,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final audioService = ref.read(audioServiceProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("应用设置"),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.info_outline),
-            onPressed: _navigateToAboutPage,
-            tooltip: "关于",
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text("应用设置")),
       body: ListView(
         children: [
           _buildSectionHeader(context, "提醒配置"),
@@ -289,186 +253,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           color: Theme.of(context).colorScheme.primary,
           fontWeight: FontWeight.bold,
         ),
-      ),
-    );
-  }
-}
-
-// 关于页面
-class AboutScreen extends StatefulWidget {
-  final PackageInfo packageInfo;
-
-  const AboutScreen({super.key, required this.packageInfo});
-
-  @override
-  State<AboutScreen> createState() => _AboutScreenState();
-}
-
-class _AboutScreenState extends State<AboutScreen> {
-  bool _checkingUpdate = false;
-  String? _updateInfo;
-
-  // 模拟检查更新 - 实际项目中需要连接到你的GitHub仓库API
-  Future<void> _checkForUpdates() async {
-    setState(() {
-      _checkingUpdate = true;
-      _updateInfo = null;
-    });
-
-    await Future.delayed(const Duration(seconds: 1)); // 模拟网络延迟
-
-    // 这里应该是从GitHub API获取最新版本信息
-    // 示例：https://api.github.com/repos/用户名/仓库名/releases/latest
-    // 实际使用时需要替换为你的仓库地址
-
-    setState(() {
-      _checkingUpdate = false;
-      _updateInfo = "当前已是最新版本 v${widget.packageInfo.version}";
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("已检查更新")),
-    );
-  }
-
-  Future<void> _launchGitHub() async {
-    const url = 'https://github.com/yourusername/yourrepository';
-    if (await canLaunchUrl(Uri.parse(url))) {
-      await launchUrl(Uri.parse(url));
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("无法打开链接")),
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("关于"),
-      ),
-      body: ListView(
-        children: [
-          // 应用图标和名称
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 40),
-            child: Column(
-              children: [
-                // 这里可以替换为你的应用图标
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: const Icon(
-                    Icons.map,
-                    size: 50,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  widget.packageInfo.appName,
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-                Text(
-                  "版本 ${widget.packageInfo.version} (${widget.packageInfo.buildNumber})",
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
-            ),
-          ),
-
-          const Divider(),
-
-          // 版本信息
-          ListTile(
-            leading: const Icon(Icons.info_outline),
-            title: const Text("应用名称"),
-            subtitle: Text(widget.packageInfo.appName),
-          ),
-          ListTile(
-            leading: const Icon(Icons.code),
-            title: const Text("版本号"),
-            subtitle: Text("${widget.packageInfo.version} (${widget.packageInfo.buildNumber})"),
-          ),
-          ListTile(
-            leading: const Icon(Icons.person),
-            title: const Text("作者"),
-            subtitle: const Text("Your Name"), // 替换为你的名字
-          ),
-
-          // GitHub仓库
-          ListTile(
-            leading: const Icon(Icons.link),
-            title: const Text("GitHub仓库"),
-            subtitle: const Text("github.com/yourusername/yourrepository"), // 替换为你的仓库地址
-            trailing: const Icon(Icons.open_in_new),
-            onTap: _launchGitHub,
-          ),
-
-          const Divider(),
-
-          // 检查更新
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (_checkingUpdate)
-                  const LinearProgressIndicator(),
-                
-                if (_updateInfo != null && !_checkingUpdate)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: Text(
-                      _updateInfo!,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.secondary,
-                      ),
-                    ),
-                  ),
-                
-                FilledButton(
-                  onPressed: _checkingUpdate ? null : _checkForUpdates,
-                  child: _checkingUpdate
-                      ? const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            ),
-                            SizedBox(width: 8),
-                            Text("检查更新中..."),
-                          ],
-                        )
-                      : const Text("检查更新"),
-                ),
-              ],
-            ),
-          ),
-
-          // 许可证信息
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Text(
-              "© 2025 AnchialC. All rights reserved.\nThis app is open source under MIT License.",
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12, color: Colors.grey),
-            ),
-          ),
-        ],
       ),
     );
   }
