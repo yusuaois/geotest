@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:dynamic_color/dynamic_color.dart';
@@ -14,26 +15,30 @@ import 'features/settings/theme_controller.dart';
 import 'app_router.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  
+  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+
   await Hive.initFlutter();
 
-  Hive.registerAdapter(ReminderLocationAdapter()); 
+  Hive.registerAdapter(ReminderLocationAdapter());
   Hive.registerAdapter(ReminderTypeAdapter());
   Hive.registerAdapter(OfflineRegionAdapter());
   Hive.registerAdapter(TaskStatusAdapter());
   Hive.registerAdapter(DownloadTaskAdapter());
-  
+
   await ReminderRepository.init();
 
   // Open the settings box
   await Hive.openBox('settings_box');
-  
+
   // Initialize services
   final notificationService = NotificationService();
   await notificationService.initialize();
   final locationService = LocationService();
   await locationService.initialize();
+
+  await locationService.requestPermission();
+
   final docDir = await getApplicationDocumentsDirectory();
   globalOfflineMapsDir = '${docDir.path}/offline_maps';
 
@@ -44,7 +49,7 @@ void main() async {
   );
 }
 
-class TriggeoApp extends ConsumerWidget { 
+class TriggeoApp extends ConsumerWidget {
   const TriggeoApp({super.key});
 
   @override
@@ -53,11 +58,12 @@ class TriggeoApp extends ConsumerWidget {
 
     return DynamicColorBuilder(
       builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
-        
         ColorScheme lightScheme;
         ColorScheme darkScheme;
 
-        if (lightDynamic != null && darkDynamic != null && themeState.useDynamicColor) {
+        if (lightDynamic != null &&
+            darkDynamic != null &&
+            themeState.useDynamicColor) {
           // If support dynamic color and enabled in settings
           lightScheme = lightDynamic.harmonized();
           darkScheme = darkDynamic.harmonized();
@@ -85,7 +91,7 @@ class TriggeoApp extends ConsumerWidget {
               surfaceTintColor: Colors.transparent,
             ),
           ),
-          
+
           darkTheme: ThemeData(
             useMaterial3: true,
             colorScheme: darkScheme,
@@ -95,9 +101,9 @@ class TriggeoApp extends ConsumerWidget {
               surfaceTintColor: Colors.transparent,
             ),
           ),
-          
+
           themeMode: _getThemeMode(themeState.mode),
-          
+
           routerConfig: router,
         );
       },

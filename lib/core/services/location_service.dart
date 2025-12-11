@@ -9,6 +9,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:triggeo/data/models/download_task.dart';
 import 'package:triggeo/data/models/offline_region.dart';
@@ -53,11 +54,15 @@ void onStart(ServiceInstance service) async {
   service.on('stopService').listen((event) => service.stopSelf());
 
   //Get the initial position
-  final Position initialPosition = await Geolocator.getCurrentPosition(
-    locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
-  );
-  service.invoke('update',
-      {"lat": initialPosition.latitude, "lng": initialPosition.longitude});
+  try {
+    final Position initialPosition = await Geolocator.getCurrentPosition(
+      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+    );
+    service.invoke('update',
+        {"lat": initialPosition.latitude, "lng": initialPosition.longitude});
+  } catch (e) {
+    debugPrint("后台服务获取初始位置失败: $e");
+  }
 
   Geolocator.getPositionStream(
     locationSettings: const LocationSettings(
@@ -181,38 +186,20 @@ class LocationService {
     );
   }
 
-  Future<bool> requestPermission() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      debugPrint('定位服务未开启');
-      return false;
+Future<bool> requestPermission() async {
+    final status = await Permission.location.status;
+    if (!status.isGranted) {
+      final result = await Permission.location.request();
+      return result.isGranted;
     }
-
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        debugPrint('定位权限被拒绝');
-        return false;
-      }
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      debugPrint('定位权限被永久拒绝');
-      return false;
-    }
-
     return true;
-  }
+}
 
   Future<void> startService() async {
     final hasPermission = await requestPermission();
     if (hasPermission) {
       await service.startService();
-    }
+  }
   }
 
   Future<Map<String, dynamic>?> getCurrentPosition() async {
@@ -231,7 +218,7 @@ class LocationService {
         "lng": position.longitude,
       };
     } catch (e) {
-      debugPrint("Error getting initial location: $e");
+      debugPrint("Error getting current location: $e");
       return null;
     }
   }

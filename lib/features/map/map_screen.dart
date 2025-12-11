@@ -2,11 +2,13 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
+import 'package:permission_handler/permission_handler.dart';
 import 'package:triggeo/core/constants/global_config.dart';
 import 'package:triggeo/core/services/service_locator.dart';
 import 'package:triggeo/data/repositories/settings_repository.dart';
@@ -31,6 +33,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   @override
   void initState() {
     super.initState();
+    FlutterNativeSplash.remove();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initLocation();
     });
@@ -38,7 +41,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
   Future<void> _initLocation() async {
     final locationService = ref.read(locationServiceProvider);
-    await locationService.requestPermission();
+
     final initialPos = await locationService.getCurrentPosition();
 
     if (initialPos != null && mounted) {
