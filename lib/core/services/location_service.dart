@@ -10,6 +10,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:rxdart/rxdart.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:triggeo/data/models/download_task.dart';
 import 'package:triggeo/data/models/offline_region.dart';
 import 'package:vibration/vibration.dart';
@@ -52,12 +53,24 @@ void onStart(ServiceInstance service) async {
 
   service.on('stopService').listen((event) => service.stopSelf());
 
+  // 检查后台权限
+  final hasPermission = await _checkBackgroundLocationPermission();
+  if (!hasPermission) {
+    debugPrint("后台服务: 位置权限不足，停止服务");
+    service.stopSelf();
+    return;
+  }
+
   //Get the initial position
-  final Position initialPosition = await Geolocator.getCurrentPosition(
-    locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
-  );
-  service.invoke('update',
-      {"lat": initialPosition.latitude, "lng": initialPosition.longitude});
+  try {
+    final Position initialPosition = await Geolocator.getCurrentPosition(
+      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+    );
+    service.invoke('update',
+        {"lat": initialPosition.latitude, "lng": initialPosition.longitude});
+  } catch (e) {
+    debugPrint("后台服务获取初始位置失败: $e");
+  }
 
   Geolocator.getPositionStream(
     locationSettings: const LocationSettings(
@@ -159,10 +172,40 @@ void onStart(ServiceInstance service) async {
   });
 }
 
+// 后台服务中的权限检查
+Future<bool> _checkBackgroundLocationPermission() async {
+  // 检查定位服务是否开启
+  bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+  if (!serviceEnabled) {
+    debugPrint('后台服务: 定位服务未开启');
+    return false;
+  }
+
+  // 检查权限
+  if (Platform.isAndroid) {
+    final status = await Permission.locationAlways.status;
+    if (status.isDenied || status.isPermanentlyDenied) {
+      debugPrint('后台服务: 需要后台定位权限');
+      return false;
+    }
+    return status.isGranted || status.isLimited;
+  } else if (Platform.isIOS) {
+    final status = await Permission.locationAlways.status;
+    if (status.isDenied || status.isPermanentlyDenied) {
+      debugPrint('后台服务: 需要后台定位权限');
+      return false;
+    }
+    return status.isGranted || status.isLimited;
+  }
+
+  return false;
+}
+
 class LocationService {
   final service = FlutterBackgroundService();
 
   Future<void> initialize() async {
+    await _requestLocationPermissions();
     await service.configure(
       androidConfiguration: AndroidConfiguration(
         onStart: onStart,
@@ -181,43 +224,215 @@ class LocationService {
     );
   }
 
-  Future<bool> requestPermission() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+  // 请求位置权限
+  Future<bool> _requestLocationPermissions({
+    BuildContext? context,
+    bool showDialog = true,
+    bool requireBackground = false,
+  }) async {
+    // 检查定位服务是否开启
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
+      if (context != null && showDialog) {
+        await _showLocationServiceDialog(context);
+      }
       debugPrint('定位服务未开启');
       return false;
     }
 
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        debugPrint('定位权限被拒绝');
-        return false;
+    // 请求前台定位权限
+    PermissionStatus status;
+
+    if (Platform.isAndroid || Platform.isIOS) {
+      // 先请求使用中的定位权限
+      status = await Permission.locationWhenInUse.status;
+
+      if (!status.isGranted && !status.isLimited) {
+        status = await Permission.locationWhenInUse.request();
+
+        if (!status.isGranted && !status.isLimited) {
+          if (context != null && showDialog) {
+            await _showLocationPermissionDialog(context);
+          }
+          debugPrint('前台定位权限被拒绝');
+          return false;
+        }
       }
     }
 
-    if (permission == LocationPermission.deniedForever) {
-      debugPrint('定位权限被永久拒绝');
-      return false;
+    // 如果需要后台定位权限
+    if (requireBackground) {
+      final backgroundStatus = await Permission.locationAlways.status;
+
+      if (!backgroundStatus.isGranted && !backgroundStatus.isLimited) {
+        if (context != null) {
+          // 显示解释后台权限的对话框
+          final granted = await _showBackgroundPermissionDialog(context);
+          if (!granted) {
+            debugPrint('后台定位权限被拒绝');
+            return false;
+          }
+        } else {
+          // 没有context，直接请求
+          final result = await Permission.locationAlways.request();
+          if (!result.isGranted && !result.isLimited) {
+            debugPrint('后台定位权限被拒绝');
+            return false;
+          }
+        }
+      }
     }
 
     return true;
   }
 
-  Future<void> startService() async {
-    final hasPermission = await requestPermission();
-    if (hasPermission) {
-      await service.startService();
+  // 检查是否有位置权限
+  Future<bool> hasLocationPermission({bool requireBackground = false}) async {
+    // 检查定位服务
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) return false;
+
+    // 检查前台权限
+    if (Platform.isAndroid || Platform.isIOS) {
+      final foregroundStatus = await Permission.locationWhenInUse.status;
+      if (!foregroundStatus.isGranted && !foregroundStatus.isLimited) {
+        return false;
+      }
+
+      // 检查后台权限
+      if (requireBackground) {
+        final backgroundStatus = await Permission.locationAlways.status;
+        return backgroundStatus.isGranted || backgroundStatus.isLimited;
+      }
+
+      return true;
     }
+
+    return false;
   }
 
-  Future<Map<String, dynamic>?> getCurrentPosition() async {
-    bool hasPermission = await requestPermission();
-    if (!hasPermission) return null;
+  // 显示定位服务对话框
+  Future<void> _showLocationServiceDialog(BuildContext context) async {
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('定位服务已关闭'),
+          content: const Text('请打开设备定位服务以使用位置提醒功能'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('取消'),
+            ),
+            TextButton(
+              onPressed: () {
+                Geolocator.openLocationSettings();
+                Navigator.pop(context);
+              },
+              child: const Text('打开设置'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // 显示前台定位权限对话框
+  Future<void> _showLocationPermissionDialog(BuildContext context) async {
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('需要位置权限'),
+          content: const Text(
+            'Triggeo需要位置权限来：\n\n'
+            '• 在地图上显示您的位置\n'
+            '• 设置位置提醒\n'
+            '• 在您移动时检测位置\n\n'
+            '请授予位置权限以获得完整功能体验。',
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('稍后'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                await openAppSettings();
+              },
+              child: const Text('去设置'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                await Permission.locationWhenInUse.request();
+              },
+              child: const Text('授予权限'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // 显示后台定位权限对话框
+  Future<bool> _showBackgroundPermissionDialog(BuildContext context) async {
+    Completer<bool> completer = Completer<bool>();
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('需要后台位置权限'),
+          content: const Text(
+            '为了在后台运行并检测位置提醒，Triggeo需要后台位置权限。\n\n'
+            '这样即使应用在后台，您也能收到位置提醒。\n\n'
+            '请授予"始终允许"位置权限。',
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                completer.complete(false);
+              },
+              child: const Text('仅使用期间'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                final result = await Permission.locationAlways.request();
+                completer.complete(result.isGranted || result.isLimited);
+              },
+              child: const Text('始终允许'),
+            ),
+          ],
+        );
+      },
+    );
+
+    return completer.future;
+  }
+
+  Future<Map<String, dynamic>?> getCurrentPosition({
+    BuildContext? context,
+    bool requestPermission = true,
+  }) async {
+    if (requestPermission) {
+      final permissionGranted = await _requestLocationPermissions(
+        context: context,
+        showDialog: context != null,
+        requireBackground: false,
+      );
+
+      if (!permissionGranted) {
+        debugPrint("获取位置: 权限被拒绝");
+        return null;
+      }
+    }
 
     try {
       Position? position = await Geolocator.getLastKnownPosition();
@@ -229,9 +444,11 @@ class LocationService {
       return {
         "lat": position.latitude,
         "lng": position.longitude,
+        "accuracy": position.accuracy,
+        "timestamp": position.timestamp?.millisecondsSinceEpoch,
       };
     } catch (e) {
-      debugPrint("Error getting initial location: $e");
+      debugPrint("Error getting current location: $e");
       return null;
     }
   }

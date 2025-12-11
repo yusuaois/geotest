@@ -38,7 +38,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
   Future<void> _initLocation() async {
     final locationService = ref.read(locationServiceProvider);
-    await locationService.requestPermission();
     final initialPos = await locationService.getCurrentPosition();
 
     if (initialPos != null && mounted) {
