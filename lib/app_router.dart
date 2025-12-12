@@ -1,7 +1,7 @@
 import 'package:go_router/go_router.dart';
 import 'package:triggeo/features/map/map_screen.dart';
-import 'package:triggeo/features/reminders/models/reminder_detail_screen.dart';
-import 'package:triggeo/features/reminders/models/reminder_list_screen.dart';
+import 'package:triggeo/features/reminders/reminder_detail_screen.dart';
+import 'package:triggeo/features/reminders/reminder_list_screen.dart';
 import 'package:triggeo/features/settings/settings_screen.dart';
 import 'package:latlong2/latlong.dart';
 

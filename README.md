@@ -1,16 +1,89 @@
-# triggeo
+# 🦊 Triggeo · Lightweight & Dynamic Area Trigger Reminder [中文](./docs/README.zh-CN.md)|English
 
-A new Flutter project.
+A **compact and elegant** map application that reminds you when entering preset areas.
 
-## Getting Started
+---
 
-This project is a starting point for a Flutter application.
+## ✨ Features
 
-A few resources to get you started if this is your first Flutter project:
+- 🧭 **Lightweight Interaction** — Simple map operations  
+- 🎯 **Smart Triggering** — Instant notifications when entering preset areas  
+- 🎨 **Visually Refreshing** — Smooth animations and polished interface built with Flutter  
+- 📦 **Offline Capable** — Core functions work without internet connection  
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+---
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 🗺️ Core Features
+
+- Freely select areas on the map
+- Set area names and trigger radii
+- Real-time location tracking with silent monitoring
+- Local notifications when in designated areas
+- Completely offline location detection
+
+---
+
+## 🚀 Quick Start
+
+```bash
+# Clone the project
+git clone https://github.com/yourname/triggeo.git
+
+# Install dependencies
+flutter pub get
+
+# Run the application
+flutter run
+```
+
+> **Note**: iOS requires location permission configuration in `Info.plist`, Android requires setting up permissions in `AndroidManifest.xml`.
+
+---
+
+## 📱 Application Preview
+
+![Map](assets/images/preview/Map.png)
+
+---
+
+## 🧩 Project Structure
+
+```
+lib/
+├── core/           # Utilities & constants
+├── data/           # Data layer (models, storage)
+├── features/       # Feature modules
+│   ├── map/        # Map interactions
+│   ├── reminders/  # Reminder module
+│   └── settings/   # Settings
+├── l10n/           # Localization
+└── main.dart       # Application entry
+```
+
+---
+
+## 🌱 Design Philosophy
+
+**Triggeo** embraces "less is more":
+
+- Focused functionality: Specialized in area trigger reminders
+- Lightweight interaction: Responsive clicks, smooth animations
+- Visual restraint: Soothing colors, appropriate spacing, clear hierarchy
+
+---
+
+## 📄 License
+
+MIT © 2025 AnchialC  
+Issues and PRs are welcome to help improve this application.
+
+---
+
+## 🌟 Acknowledgments
+
+Thanks to the Flutter community and all open-source map service providers.  
+If you find this application useful, please consider giving it a Star ⭐.
+
+---
+
+> Triggeo · A lightweight spatiotemporal awareness assistant.
