@@ -1,0 +1,170 @@
+{
+    "@@locale": "zh",
+    "helloWorld": "你好世界",
+
+    "mapSearchFailed": "搜索失败: {error}",
+    "@mapSearchFailed": {
+        "placeholders": {
+            "error": {}
+        }
+    },
+    "mapLocating": "正在定位...",
+    "mapSearchHint": "搜索地点",
+    "mapSearchEmptyError": "请输入搜索关键词",
+    "mapLocationFailed": "定位失败: {error}",
+    "@mapLocationFailed": {
+        "placeholders": {
+            "error": {}
+        }
+    },
+    "mapLongPressHint": "长按地图任意位置添加提醒",
+    "mapNoSearchResults": "没有找到搜索结果",
+    
+    "settingsRingtoneSaved": "铃声已保存: {ringtoneName}",
+    "@settingsRingtoneSaved": {
+        "placeholders": {
+            "ringtoneName": {}
+        }
+    },
+    "settingsTitle": "设置",
+    "settingsThemeSection": "主题",
+    "settingsDynamic":"动态取色 (Material You)",
+    "settingsSystemWallpaperColor": "跟随系统壁纸颜色 (仅Android 12+)",
+    "settingsCustomThemeColor": "自定义主题色",
+    "settingsDarkMode": "深色模式",
+    "settingsLightMode": "浅色模式",
+    "settingsThemeSystem": "跟随系统",
+    "settingsThemeLight": "浅色",
+    "settingsThemeDark": "深色",
+    "settingsReminderSection": "提醒设置",
+    "settingsReminderType": "提醒类型",
+    "settingsReminderRingtone": "响铃",
+    "settingsReminderVibration": "震动",
+    "settingsReminderBoth": "响铃与震动",
+    "settingsCustomRingtone": "自定义提醒铃声",
+    "settingsPickRingtone": "点击选择音频文件",
+    "settingsTestSetting": "测试当前设置",
+    "settingsMapDataSection": "地图与数据",
+    "settingsOfflineMap": "离线地图",
+    "settingsManageOfflineMap": "管理已下载的地图",
+    "settingsTileSource": "地图源",
+    "settingsTileSourceRestart": "地图源已切换，重启应用生效",
+
+    "offlineMapAddedToQueue": "已加入下载队列",
+    "offlineMapTitle": "离线地图管理",
+    "offlineMapTabNew": "下载新地图",
+    "offlineMapTabTasks": "任务与已下载",
+    "offlineMapLoadingData": "正在加载离线地图数据...",
+    "offlineMapLoadFailed": "加载失败: {error}",
+    "@offlineMapLoadFailed": {
+        "placeholders": {
+            "error": {}
+        }
+    },
+    "offlineMapSearchHint": "搜索城市",
+    "offlineMapSearchButton": "开始搜索",
+    "offlineMapSearching": "搜索中...",
+    "offlineMapNoResults": "没有找到搜索结果",
+    "offlineMapDownloadAction": "下载",
+    "offlineMapStatusDownloading": "下载中 {percent}%",
+    "@offlineMapStatusDownloading": {
+        "placeholders": {
+            "percent": {}
+        }
+    },
+    "offlineMapStatusCompleted": "已完成",
+    "offlineMapStatusFailed": "下载失败",
+    "offlineMapStatusPaused": "已暂停",
+    "offlineMapStatusCanceled": "已取消",
+    "offlineMapStatusPending": "等待中...",
+    "offlineMapPauseAction": "暂停",
+    "offlineMapResumeAction": "继续",
+    "offlineMapDeleteAction": "删除",
+    "offlineMapNoTasks": "暂无任务",
+
+    "reminderNameRequired": "请输入名称",
+    "reminderSaveFailed": "保存失败: {error}",
+    "@reminderSaveFailed": {
+        "placeholders": {
+            "error": {}
+        }
+    },
+    "reminderDetailTitle": "设置提醒",
+    "reminderNameLabel": "位置名称",
+    "reminderNameHint": "例如：超市，公司",
+    "reminderRadiusText": "提醒半径: {radius} 米",
+    "@reminderRadiusText": {
+        "placeholders": {
+            "radius": {
+                "type": "int"
+            }
+        }
+    },
+    "saveAction": "保存",
+    
+    "reminderListTitle": "我的提醒",
+    "reminderListEmpty": "暂无提醒",
+    "reminderListItemSubtitle": "半径: {radius}m\n坐标: {lat}, {lon}",
+    "@reminderListItemSubtitle": {
+        "placeholders": {
+            "radius": {
+                "type": "int"
+            },
+            "lat": {},
+            "lon": {}
+        }
+    },
+    "reminderEditTitle": "添加/编辑提醒",
+    "reminderDetailInfo":"纬度: {lat}\n经度: {lon}",
+    "@reminderDetailInfo": {
+        "placeholders": {
+            "lat": {},
+            "lon": {}
+        }
+    },
+    "reminderCreated":"提醒已创建",
+    "reminderUpdated":"提醒已更新",
+    "cancelAction": "取消",
+
+    "backgroundServiceTitle": "Triggeo 后台检测",
+    "backgroundServiceContent": "后台定位检测中...",
+    "backgroundServicePermissionError": "无法启动后台服务，请确保已授予位置权限",
+    "backgroundServiceAlwaysPermissionError": "位置权限不足，请在系统设置中授予“始终”权限以确保后台提醒功能正常。",
+    "backgroundServiceStarted": "后台定位服务已启动",
+    "backgroundServiceStopped": "后台定位服务已停止",
+    "locationServiceAlertTitle": "提醒触发: {name}",
+    "@locationServiceAlertTitle": {
+        "placeholders": {
+            "name": {}
+        }
+    },
+    "locationServiceAlertBodyTitle": "📍 到达提醒: {name}",
+    "@locationServiceAlertBodyTitle": {
+        "placeholders": {
+            "name": {}
+        }
+    },
+    "locationServiceAlertBodySubtitle": "您已到达目标区域",
+
+    "notificationChannelBackgroundName": "后台运行服务",
+    "notificationChannelBackgroundDesc": "保持应用在后台检测位置",
+    "notificationChannelAlertName": "位置到达提醒",
+    "notificationChannelAlertDesc": "当到达目的地时发出提醒",
+    "notificationChannelDownloadName": "地图下载进度",
+    "notificationChannelDownloadDesc": "显示离线地图下载的进度",
+    "notificationDownloadProgressTitle": "正在下载离线地图 ({activeTasks} 个任务)",
+    "@notificationDownloadProgressTitle": {
+        "placeholders": {
+            "activeTasks": {
+                "type": "int"
+            }
+        }
+    },
+    "notificationDownloadFailedTitle": "下载失败: {error}",
+    "@notificationDownloadFailedTitle": {
+        "placeholders": {
+            "error": {}
+        }
+    },
+    "notificationDownloadFailedBody": "请检查网络并重试"
+}

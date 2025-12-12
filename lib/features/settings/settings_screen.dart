@@ -9,6 +9,7 @@ import 'package:triggeo/core/services/service_locator.dart';
 import 'package:triggeo/features/settings/offline_map_screen.dart';
 import 'package:triggeo/features/settings/theme_controller.dart';
 import 'package:triggeo/data/repositories/settings_repository.dart';
+import 'package:triggeo/l10n/app_localizations.dart';
 
 enum GlobalReminderType { ringtone, vibration, both }
 
@@ -65,7 +66,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("铃声已保存: ${result.files.single.name}")),
+          SnackBar(content: Text(AppLocalizations.of(context)!.settingsRingtoneSaved(result.files.single.name))),
         );
       }
     }
@@ -78,10 +79,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final audioService = ref.read(audioServiceProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text("应用设置")),
+      appBar: AppBar(title: Text(AppLocalizations.of(context)!.settingsTitle)),
       body: ListView(
         children: [
-          _buildSectionHeader(context, "提醒配置"),
+          _buildSectionHeader(context, AppLocalizations.of(context)!.settingsReminderSection),
 
           // Notification
           Padding(
@@ -89,19 +90,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             child: Column(
               children: [
                 RadioListTile<GlobalReminderType>(
-                  title: const Text("仅铃声"),
+                  title: Text(AppLocalizations.of(context)!.settingsReminderRingtone),
                   value: GlobalReminderType.ringtone,
                   groupValue: _reminderType,
                   onChanged: (val) => _saveReminderType(val!),
                 ),
                 RadioListTile<GlobalReminderType>(
-                  title: const Text("仅震动"),
+                  title: Text(AppLocalizations.of(context)!.settingsReminderVibration),
                   value: GlobalReminderType.vibration,
                   groupValue: _reminderType,
                   onChanged: (val) => _saveReminderType(val!),
                 ),
                 RadioListTile<GlobalReminderType>(
-                  title: const Text("铃声 + 震动"),
+                  title: Text(AppLocalizations.of(context)!.settingsReminderBoth),
                   value: GlobalReminderType.both,
                   groupValue: _reminderType,
                   onChanged: (val) => _saveReminderType(val!),
@@ -115,17 +116,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           // Custom Ringtone
           ListTile(
             leading: const Icon(Icons.music_note),
-            title: const Text("选择自定义铃声"),
+            title: Text(AppLocalizations.of(context)!.settingsCustomRingtone),
             subtitle: Text(_customRingtonePath != null
-                ? "当前: ${path.basename(_customRingtonePath!)}"
-                : "点击选择本地音频文件"),
+                ? path.basename(_customRingtonePath!)
+                : AppLocalizations.of(context)!.settingsPickRingtone),
             trailing: const Icon(Icons.chevron_right),
             onTap: _pickAndSaveRingtone,
           ),
 
           ListTile(
             leading: const Icon(Icons.play_circle_fill),
-            title: const Text("测试当前配置"),
+            title: Text(AppLocalizations.of(context)!.settingsTestSetting),
             onTap: () async {
               if ((_reminderType == GlobalReminderType.ringtone ||
                       _reminderType == GlobalReminderType.both) &&
@@ -140,16 +141,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
 
           const Divider(),
-          _buildSectionHeader(context, "外观"),
+          _buildSectionHeader(context, AppLocalizations.of(context)!.settingsThemeSection), 
           SwitchListTile(
-            title: const Text("动态取色 (Material You)"),
-            subtitle: const Text("跟随系统壁纸颜色 (仅Android 12+)"),
+            title: Text(AppLocalizations.of(context)!.settingsDynamic),
+            subtitle: Text(AppLocalizations.of(context)!.settingsSystemWallpaperColor),
             value: themeState.useDynamicColor,
             onChanged: (val) => themeNotifier.toggleDynamicColor(val),
           ),
           if (!themeState.useDynamicColor)
             ListTile(
-              title: const Text("自定义主题色"),
+              title: Text(AppLocalizations.of(context)!.settingsCustomThemeColor),
               subtitle: Wrap(
                 spacing: 8,
                 children: [
@@ -180,27 +181,27 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ),
           ListTile(
-            title: const Text("深色模式"),
+            title: Text(AppLocalizations.of(context)!.settingsDarkMode),
             trailing: DropdownButton<AppThemeMode>(
               value: themeState.mode,
               onChanged: (AppThemeMode? newValue) {
                 if (newValue != null) themeNotifier.setThemeMode(newValue);
               },
-              items: const [
+              items: [
                 DropdownMenuItem(
-                    value: AppThemeMode.system, child: Text("跟随系统")),
-                DropdownMenuItem(value: AppThemeMode.light, child: Text("浅色")),
-                DropdownMenuItem(value: AppThemeMode.dark, child: Text("深色")),
+                    value: AppThemeMode.system, child: Text(AppLocalizations.of(context)!.settingsThemeSystem)),
+                DropdownMenuItem(value: AppThemeMode.light, child: Text(AppLocalizations.of(context)!.settingsThemeLight)),
+                DropdownMenuItem(value: AppThemeMode.dark, child: Text(AppLocalizations.of(context)!.settingsThemeDark)),
               ],
             ),
           ),
 
           const Divider(),
-          _buildSectionHeader(context, "地图数据"), // New Section Header
+          _buildSectionHeader(context, AppLocalizations.of(context)!.settingsMapDataSection), // New Section Header
           ListTile(
             leading: const Icon(Icons.download_for_offline),
-            title: const Text("离线地图管理"),
-            subtitle: const Text("下载离线地图数据"),
+            title: Text(AppLocalizations.of(context)!.settingsOfflineMap),
+            subtitle: Text(AppLocalizations.of(context)!.settingsManageOfflineMap),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               Navigator.of(context).push(
@@ -218,7 +219,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
               return ListTile(
                 // TODO 搜索源 高德/百度
-                title: const Text("地图源"),
+                title: Text(AppLocalizations.of(context)!.settingsTileSource),
                 subtitle: Text(kTileSources[currentIndex].name),
                 trailing: PopupMenuButton<int>(
                   initialValue: currentIndex,
@@ -226,7 +227,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     await settingsRepo.setTileSource(index);
                     setState(() {});
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("地图源已切换，重启应用生效")),
+                        SnackBar(content: Text(AppLocalizations.of(context)!.settingsTileSourceRestart)),
                       );
                     
                   },

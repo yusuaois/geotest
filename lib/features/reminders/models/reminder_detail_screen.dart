@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:triggeo/data/models/reminder_location.dart';
 import 'package:triggeo/data/repositories/reminder_repository.dart';
+import 'package:triggeo/l10n/app_localizations.dart';
 
 class ReminderDetailScreen extends ConsumerStatefulWidget {
   final LatLng target;
@@ -21,7 +22,7 @@ class _ReminderDetailScreenState extends ConsumerState<ReminderDetailScreen> {
   void _save() async {
     if (_nameController.text.isEmpty) {
       ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('请输入名称')));
+          .showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.reminderNameRequired)));
       return;
     }
 
@@ -43,7 +44,7 @@ class _ReminderDetailScreenState extends ConsumerState<ReminderDetailScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('保存失败: $e')));
+            .showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.reminderSaveFailed(e))));
       }
     }
   }
@@ -51,18 +52,18 @@ class _ReminderDetailScreenState extends ConsumerState<ReminderDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("设置提醒")),
+      appBar: AppBar(title: Text(AppLocalizations.of(context)!.reminderDetailTitle)),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
             TextField(
               controller: _nameController,
-              decoration: const InputDecoration(
-                  labelText: "位置名称", hintText: "例如：超市，公司"),
+              decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context)!.reminderNameLabel, hintText: AppLocalizations.of(context)!.reminderNameHint),
             ),
             const SizedBox(height: 20),
-            Text("提醒半径: ${_radius.toInt()} 米"),
+            Text(AppLocalizations.of(context)!.reminderRadiusText(_radius.toInt())),
             Slider(
               value: _radius,
               min: 50,
@@ -73,7 +74,7 @@ class _ReminderDetailScreenState extends ConsumerState<ReminderDetailScreen> {
             const Spacer(),
             SizedBox(
               width: double.infinity,
-              child: FilledButton(onPressed: _save, child: const Text("保存提醒")),
+              child: FilledButton(onPressed: _save, child: Text(AppLocalizations.of(context)!.saveAction)),
             )
           ],
         ),

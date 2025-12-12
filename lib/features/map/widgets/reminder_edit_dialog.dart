@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:triggeo/data/models/reminder_location.dart';
 import 'package:triggeo/data/repositories/reminder_repository.dart';
+import 'package:triggeo/l10n/app_localizations.dart';
 
 class ReminderEditDialog extends ConsumerStatefulWidget {
   final LatLng position;
@@ -51,7 +52,7 @@ class _ReminderEditDialogState extends ConsumerState<ReminderEditDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content:
-                  Text(widget.existingReminder == null ? "提醒已创建" : "提醒已更新")),
+                  Text(widget.existingReminder == null ? AppLocalizations.of(context)!.reminderCreated : AppLocalizations.of(context)!.reminderUpdated)),
         );
       }
     }
@@ -60,7 +61,7 @@ class _ReminderEditDialogState extends ConsumerState<ReminderEditDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.existingReminder == null ? "新建位置提醒" : "编辑位置提醒"),
+      title: Text(AppLocalizations.of(context)!.reminderEditTitle),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -76,7 +77,10 @@ class _ReminderEditDialogState extends ConsumerState<ReminderEditDialog> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  "纬度: ${widget.position.latitude.toStringAsFixed(5)}\n经度: ${widget.position.longitude.toStringAsFixed(5)}",
+                  AppLocalizations.of(context)!.reminderDetailInfo(
+                    widget.position.latitude.toStringAsFixed(5),
+                    widget.position.longitude.toStringAsFixed(5),
+                  ),
                   style: const TextStyle(
                       fontSize: 12,
                       fontFamily: 'monospace',
@@ -88,17 +92,17 @@ class _ReminderEditDialogState extends ConsumerState<ReminderEditDialog> {
               // Input for name
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: "位置名称",
-                  hintText: "例如：公司、超市",
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context)!.reminderNameLabel,
+                  hintText: AppLocalizations.of(context)!.reminderNameHint,
+                  border: const OutlineInputBorder(),
                 ),
-                validator: (val) => val == null || val.isEmpty ? "请输入名称" : null,
+                validator: (val) => val == null || val.isEmpty ? AppLocalizations.of(context)!.reminderNameRequired : null,
               ),
               const SizedBox(height: 16),
 
               // Radius slider
-              Text("提醒半径: ${_radius.toInt()} 米"),
+              Text(AppLocalizations.of(context)!.reminderRadiusText(_radius.toInt())),
               Slider(
                 value: _radius,
                 min: 100,
@@ -114,11 +118,11 @@ class _ReminderEditDialogState extends ConsumerState<ReminderEditDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text("取消"),
+          child: Text(AppLocalizations.of(context)!.cancelAction),
         ),
         FilledButton(
           onPressed: _save,
-          child: const Text("保存"),
+          child: Text(AppLocalizations.of(context)!.saveAction),
         ),
       ],
     );

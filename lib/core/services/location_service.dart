@@ -13,6 +13,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:triggeo/data/models/download_task.dart';
 import 'package:triggeo/data/models/offline_region.dart';
+import 'package:triggeo/l10n/app_localizations.dart';
 import 'package:vibration/vibration.dart';
 import 'package:triggeo/data/models/reminder_location.dart';
 import 'package:triggeo/data/repositories/reminder_repository.dart';
@@ -20,7 +21,7 @@ import 'package:triggeo/core/utils/geofence_calculator.dart';
 import 'package:triggeo/core/services/notification_service.dart';
 
 @pragma('vm:entry-point')
-void onStart(ServiceInstance service) async {
+void onStart(ServiceInstance service, AppLocalizations l10n) async {
   DartPluginRegistrant.ensureInitialized();
 
   await Hive.initFlutter();
@@ -94,12 +95,12 @@ void onStart(ServiceInstance service) async {
           // A. Visual notification
           await notificationPlugin.show(
             reminder.id.hashCode,
-            "📍 到达提醒: ${reminder.name}",
-            "您已进入目标区域",
-            const NotificationDetails(
+            l10n.locationServiceAlertBodyTitle(reminder.name),
+            l10n.locationServiceAlertBodySubtitle,
+            NotificationDetails(
               android: AndroidNotificationDetails(
                 NotificationService.channelIdAlert,
-                '位置到达提醒',
+                l10n.notificationChannelAlertName,
                 importance: Importance.max,
                 priority: Priority.high,
                 fullScreenIntent: true,
@@ -169,20 +170,20 @@ void onStart(ServiceInstance service) async {
 class LocationService {
   final service = FlutterBackgroundService();
 
-  Future<void> initialize() async {
+  Future<void> initialize(AppLocalizations l10n) async {
     await service.configure(
       androidConfiguration: AndroidConfiguration(
-        onStart: onStart,
+        onStart: (ServiceInstance service) => onStart(service, l10n),
         autoStart: false,
         isForegroundMode: true,
         notificationChannelId: NotificationService.channelIdBackground,
-        initialNotificationTitle: 'Triggeo 后台检测',
-        initialNotificationContent: '后台定位检测中...',
+        initialNotificationTitle: l10n.backgroundServiceTitle,
+        initialNotificationContent: l10n.backgroundServiceContent,
         foregroundServiceNotificationId: 888,
       ),
       iosConfiguration: IosConfiguration(
         autoStart: false,
-        onForeground: onStart,
+        onForeground: (ServiceInstance service) => onStart(service, l10n),
         onBackground: onIosBackground,
       ),
     );
@@ -218,9 +219,7 @@ class LocationService {
 
       position ??= await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
-          // 定位精度
           accuracy: LocationAccuracy.high,
-          // 超时设置
           timeLimit: Duration(seconds: 20),
         ),
       );

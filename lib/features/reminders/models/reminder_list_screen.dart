@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:triggeo/data/repositories/reminder_repository.dart';
 import 'package:triggeo/features/map/widgets/reminder_edit_dialog.dart';
+import 'package:triggeo/l10n/app_localizations.dart';
 
 class ReminderListScreen extends ConsumerWidget {
   const ReminderListScreen({super.key});
@@ -12,12 +13,12 @@ class ReminderListScreen extends ConsumerWidget {
     final listAsync = ref.watch(reminderListProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text("我的提醒")),
+      appBar: AppBar(title: Text(AppLocalizations.of(context)!.reminderListTitle)),
       body: listAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text('Error: $err')),
         data: (reminders) {
-          if (reminders.isEmpty) return const Center(child: Text("暂无提醒"));
+          if (reminders.isEmpty) return Center(child: Text(AppLocalizations.of(context)!.reminderListEmpty));
 
           return ListView.builder(
             itemCount: reminders.length,
@@ -32,7 +33,11 @@ class ReminderListScreen extends ConsumerWidget {
                 child: SwitchListTile(
                   title: Text(item.name),
                   subtitle: Text(
-                    "半径: ${item.radius.toInt()}m\n坐标: ${item.latitude.toStringAsFixed(4)}, ${item.longitude.toStringAsFixed(4)}",
+                    AppLocalizations.of(context)!.reminderListItemSubtitle(
+                      item.radius.toInt(),
+                      item.latitude.toStringAsFixed(4),
+                      item.longitude.toStringAsFixed(4),
+                    ),
                   ),
                   isThreeLine: true,
                   value: item.isActive,

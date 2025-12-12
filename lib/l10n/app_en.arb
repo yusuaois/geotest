@@ -1,0 +1,170 @@
+{
+    "@@locale": "en",
+    "helloWorld": "Hello World",
+
+    "mapSearchFailed": "Search failed: {error}",
+    "@mapSearchFailed": {
+        "placeholders": {
+            "error": {}
+        }
+    },
+    "mapLocating": "Locating...",
+    "mapSearchHint": "Search location",
+    "mapSearchEmptyError": "Please enter search keywords",
+    "mapLocationFailed": "Location failed: {error}",
+    "@mapLocationFailed": {
+        "placeholders": {
+            "error": {}
+        }
+    },
+    "mapLongPressHint": "Long press anywhere on the map to add a reminder",
+    "mapNoSearchResults": "No search results found",
+
+    "settingsRingtoneSaved": "Ringtone saved: {ringtoneName}",
+    "@settingsRingtoneSaved": {
+        "placeholders": {
+            "ringtoneName": {}
+        }
+    },
+    "settingsTitle": "Settings",
+    "settingsThemeSection": "Theme",
+    "settingsDynamic":"Dynamic Color (Material You)",
+    "settingsSystemWallpaperColor": "System Wallpaper Color",
+    "settingsCustomThemeColor": "Custom Theme Color",
+    "settingsDarkMode": "Dark Mode",
+    "settingsLightMode": "Light Mode",
+    "settingsThemeSystem": "Follow System",
+    "settingsThemeLight": "Light",
+    "settingsThemeDark": "Dark",
+    "settingsReminderSection": "Reminder Settings",
+    "settingsReminderType": "Reminder Type",
+    "settingsReminderRingtone": "Ring",
+    "settingsReminderVibration": "Vibrate",
+    "settingsReminderBoth": "Ring & Vibrate",
+    "settingsCustomRingtone": "Custom Reminder Ringtone",
+    "settingsPickRingtone": "Tap to select audio file",
+    "settingsTestSetting": "Test Setting",
+    "settingsMapDataSection": "Map & Data",
+    "settingsOfflineMap": "Offline Maps",
+    "settingsManageOfflineMap": "Manage Downloaded Maps",
+    "settingsTileSource": "Tile Source",
+    "settingsTileSourceRestart": "Tile source changed. Restart app to take effect",
+
+    "offlineMapAddedToQueue": "Added to download queue",
+    "offlineMapTitle": "Offline Map Management",
+    "offlineMapTabNew": "Download New Map",
+    "offlineMapTabTasks": "Tasks & Downloaded",
+    "offlineMapLoadingData": "Loading offline map data...",
+    "offlineMapLoadFailed": "Load failed: {error}",
+    "@offlineMapLoadFailed": {
+        "placeholders": {
+            "error": {}
+        }
+    },
+    "offlineMapSearchHint": "Search city",
+    "offlineMapSearchButton": "Search",
+    "offlineMapSearching": "Searching...",
+    "offlineMapNoResults": "No results found",
+    "offlineMapDownloadAction": "Download",
+    "offlineMapStatusDownloading": "Downloading {percent}%",
+    "@offlineMapStatusDownloading": {
+        "placeholders": {
+            "percent": {}
+        }
+    },
+    "offlineMapStatusCompleted": "Completed",
+    "offlineMapStatusFailed": "Download failed",
+    "offlineMapStatusPaused": "Paused",
+    "offlineMapStatusCanceled": "Canceled",
+    "offlineMapStatusPending": "Pending...",
+    "offlineMapPauseAction": "Pause",
+    "offlineMapResumeAction": "Resume",
+    "offlineMapDeleteAction": "Delete",
+    "offlineMapNoTasks": "No tasks",
+
+    "reminderNameRequired": "Please enter a name",
+    "reminderSaveFailed": "Save failed: {error}",
+    "@reminderSaveFailed": {
+        "placeholders": {
+            "error": {}
+        }
+    },
+    "reminderDetailTitle": "Set Reminder",
+    "reminderNameLabel": "Location Name",
+    "reminderNameHint": "e.g., Supermarket, Office",
+    "reminderRadiusText": "Reminder radius: {radius} meters",
+    "@reminderRadiusText": {
+        "placeholders": {
+            "radius": {
+                "type": "int"
+            }
+        }
+    },
+    "saveAction": "Save",
+
+    "reminderListTitle": "My Reminders",
+    "reminderListEmpty": "No reminders yet",
+    "reminderListItemSubtitle": "Radius: {radius}m\nCoordinates: {lat}, {lon}",
+    "@reminderListItemSubtitle": {
+        "placeholders": {
+            "radius": {
+                "type": "int"
+            },
+            "lat": {},
+            "lon": {}
+        }
+    },
+    "reminderEditTitle": "Add/Edit Reminder",
+    "reminderDetailInfo":"Latitude: {lat}\nLontitude: {lon}",
+    "@reminderDetailInfo": {
+        "placeholders": {
+            "lat": {},
+            "lon": {}
+        }
+    },
+    "reminderCreated":"Reminder created",
+    "reminderUpdated":"Reminder updated",
+    "cancelAction": "Cancel",
+
+    "backgroundServiceTitle": "Triggeo Background Detection",
+    "backgroundServiceContent": "Background location detection running...",
+    "backgroundServicePermissionError": "Unable to start background service. Please ensure location permission is granted.",
+    "backgroundServiceAlwaysPermissionError": "Insufficient location permission. Please grant \"Always\" permission in system settings to ensure background reminder functionality.",
+    "backgroundServiceStarted": "Background location service started",
+    "backgroundServiceStopped": "Background location service stopped",
+    "locationServiceAlertTitle": "Reminder Triggered: {name}",
+    "@locationServiceAlertTitle": {
+        "placeholders": {
+            "name": {}
+        }
+    },
+    "locationServiceAlertBodyTitle": "📍 Arrival Alert: {name}",
+    "@locationServiceAlertBodyTitle": {
+        "placeholders": {
+            "name": {}
+        }
+    },
+    "locationServiceAlertBodySubtitle": "You have arrived at Target Location",
+
+    "notificationChannelBackgroundName": "Background Running Service",
+    "notificationChannelBackgroundDesc": "Keep app running in background to detect location",
+    "notificationChannelAlertName": "Location Arrival Reminder",
+    "notificationChannelAlertDesc": "Notify when arriving at a destination",
+    "notificationChannelDownloadName": "Map Download Progress",
+    "notificationChannelDownloadDesc": "Show progress of offline map downloads",
+    "notificationDownloadProgressTitle": "Downloading offline map ({activeTasks} tasks)",
+    "@notificationDownloadProgressTitle": {
+        "placeholders": {
+            "activeTasks": {
+                "type": "int"
+            }
+        }
+    },
+    "notificationDownloadFailedTitle": "Download failed: {error}",
+    "@notificationDownloadFailedTitle": {
+        "placeholders": {
+            "error": {}
+        }
+    },
+    "notificationDownloadFailedBody": "Please check network and try again"
+}

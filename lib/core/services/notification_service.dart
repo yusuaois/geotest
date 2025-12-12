@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'dart:io';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:triggeo/l10n/app_localizations.dart';
 
 class NotificationService {
   final FlutterLocalNotificationsPlugin _notificationsPlugin =
@@ -72,7 +73,7 @@ class NotificationService {
 
   Future<void> _requestNotificationPermissions() async {
     if (Platform.isIOS) {
-      // iOS: 使用 FlutterLocalNotificationsPlugin 请求权限
+      // iOS
       await _notificationsPlugin
           .resolvePlatformSpecificImplementation<
               IOSFlutterLocalNotificationsPlugin>()
@@ -82,9 +83,8 @@ class NotificationService {
             sound: true,
           );
     } else if (Platform.isAndroid) {
-      // Android 13+ 需要请求通知权限
+      // Android 13+
       if (await Permission.notification.isRestricted) {
-        // 权限被限制（家长控制等）
         return;
       }
       
@@ -92,67 +92,6 @@ class NotificationService {
       if (!status.isGranted) {
         await Permission.notification.request();
       }
-    }
-  }
-
-  Future<bool> hasNotificationPermission() async {
-    if (Platform.isIOS) {
-      // iOS: 检查通知权限状态
-      final settings = await _notificationsPlugin
-          .resolvePlatformSpecificImplementation<
-              IOSFlutterLocalNotificationsPlugin>()
-          ?.getNotificationAppLaunchDetails();
-      
-      if (settings == null) return false;
-      
-      return settings.didNotificationLaunchApp;
-    } else if (Platform.isAndroid) {
-      // Android: 检查通知权限
-      final status = await Permission.notification.status;
-      return status.isGranted;
-    }
-    return false;
-  }
-
-  // 显示权限引导对话框
-  Future<void> showPermissionGuide(BuildContext context) async {
-    final hasPermission = await hasNotificationPermission();
-    
-    if (!hasPermission) {
-      return showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => AlertDialog(
-          title: const Text('通知权限'),
-          content: const Text(
-            'Triggeo需要通知权限来：\n\n'
-            '• 在后台运行时显示位置提醒\n'
-            '• 显示地图下载进度\n'
-            '• 显示重要的应用通知\n\n'
-            '请授予通知权限以获得完整功能体验。',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('稍后'),
-            ),
-            TextButton(
-              onPressed: () async {
-                Navigator.pop(context);
-                await openAppSettings();
-              },
-              child: const Text('去设置'),
-            ),
-            TextButton(
-              onPressed: () async {
-                Navigator.pop(context);
-                await _requestNotificationPermissions();
-              },
-              child: const Text('授予权限'),
-            ),
-          ],
-        ),
-      );
     }
   }
 
@@ -174,35 +113,11 @@ class NotificationService {
     }
   }
 
-  Future<void> showArrivalNotification({
-    required int id,
-    required String title,
-    required String body,
-  }) async {
-    await _notificationsPlugin.show(
-      id,
-      title,
-      body,
-      const NotificationDetails(
-        android: AndroidNotificationDetails(
-          channelIdAlert,
-          '位置到达提醒',
-          importance: Importance.max,
-          priority: Priority.high,
-          fullScreenIntent: true,
-        ),
-        iOS: DarwinNotificationDetails(
-          presentAlert: true,
-          presentSound: true,
-        ),
-      ),
-    );
-  }
-
   Future<void> showDownloadProgress({
     required int progress,
     required int total,
     required int activeTasks,
+    required AppLocalizations l10n
   }) async {
     final int percentage = total > 0 ? ((progress / total) * 100).toInt() : 0;
     final int safeProgress = progress > total ? total : progress;
@@ -210,8 +125,8 @@ class NotificationService {
     final AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
       channelIdDownload,
-      '地图下载进度',
-      channelDescription: '显示离线地图下载的进度',
+      l10n.notificationChannelDownloadName,
+      channelDescription: l10n.notificationChannelDownloadDesc,
       importance: Importance.low,
       priority: Priority.low,
       onlyAlertOnce: true,
@@ -227,7 +142,7 @@ class NotificationService {
 
     await _notificationsPlugin.show(
       _downloadNotificationId,
-      '正在下载离线地图 ($activeTasks 个任务)',
+      l10n.notificationDownloadProgressTitle(activeTasks),
       '$percentage% ($progress / $total)',
       platformChannelSpecifics,
     );

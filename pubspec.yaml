@@ -8,6 +8,7 @@ environment:
 
 flutter:
   uses-material-design: true
+  generate: true
   assets:
     - assets/images/
     - assets/audio/
@@ -51,6 +52,7 @@ dependencies:
   permission_handler: ^12.0.1
   intl: ^0.20.2
   path: ^1.9.1
+  flutter_gen: ^5.9.0
 
 dev_dependencies:
   flutter_test:

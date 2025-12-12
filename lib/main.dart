@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -9,6 +10,7 @@ import 'package:triggeo/data/models/download_task.dart';
 import 'package:triggeo/data/models/offline_region.dart';
 import 'package:triggeo/data/models/reminder_location.dart';
 import 'package:triggeo/data/repositories/reminder_repository.dart';
+import 'package:triggeo/l10n/app_localizations.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/location_service.dart';
 import 'features/settings/theme_controller.dart';
@@ -34,10 +36,6 @@ void main() async {
   // Initialize services
   final notificationService = NotificationService();
   await notificationService.initialize();
-  final locationService = LocationService();
-  await locationService.initialize();
-
-  await locationService.requestPermission();
 
   final docDir = await getApplicationDocumentsDirectory();
   globalOfflineMapsDir = '${docDir.path}/offline_maps';
@@ -49,11 +47,18 @@ void main() async {
   );
 }
 
-class TriggeoApp extends ConsumerWidget {
+class TriggeoApp extends ConsumerStatefulWidget {
   const TriggeoApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TriggeoApp> createState() => _TriggeoAppState();
+}
+
+class _TriggeoAppState extends ConsumerState<TriggeoApp> {
+  final LocationService _locationService = LocationService();
+
+  @override
+  Widget build(BuildContext context) {
     final themeState = ref.watch(themeControllerProvider);
 
     return DynamicColorBuilder(
@@ -80,7 +85,6 @@ class TriggeoApp extends ConsumerWidget {
 
         return MaterialApp.router(
           title: 'Triggeo',
-          // Light and dark theme
           theme: ThemeData(
             useMaterial3: true,
             colorScheme: lightScheme,
@@ -88,14 +92,12 @@ class TriggeoApp extends ConsumerWidget {
               color: Colors.transparent,
               elevation: 0,
             ),
-            // Global AppBar Theme
             appBarTheme: AppBarTheme(
               centerTitle: true,
               backgroundColor: lightScheme.surface,
               surfaceTintColor: Colors.transparent,
             ),
           ),
-
           darkTheme: ThemeData(
             useMaterial3: true,
             colorScheme: darkScheme,
@@ -105,9 +107,26 @@ class TriggeoApp extends ConsumerWidget {
               surfaceTintColor: Colors.transparent,
             ),
           ),
-
           themeMode: _getThemeMode(themeState.mode),
-
+          localizationsDelegates: [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: [
+            Locale('zh', 'CN'), // Chinese
+            Locale('en', 'US'), // English
+          ],
+          builder: (context, child) {
+            WidgetsBinding.instance.addPostFrameCallback((_) async {
+              final l10n = AppLocalizations.of(context)!;
+              // Location Service Initialization
+              await _locationService.initialize(l10n);
+              await _locationService.requestPermission();
+            });
+            return child!;
+          },
           routerConfig: router,
         );
       },

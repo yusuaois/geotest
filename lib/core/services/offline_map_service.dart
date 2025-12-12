@@ -11,6 +11,7 @@ import 'package:triggeo/core/utils/tile_math.dart';
 import 'package:triggeo/data/models/download_task.dart';
 import 'package:triggeo/data/models/offline_region.dart';
 import 'package:triggeo/core/services/notification_service.dart';
+import 'package:triggeo/l10n/app_localizations.dart';
 import 'package:uuid/uuid.dart';
 import 'package:http/http.dart' as http;
 
@@ -43,6 +44,7 @@ class OfflineMapService {
     required int minZoom,
     required int maxZoom,
     required String urlTemplate,
+    required AppLocalizations l10n,
   }) async {
     final box = Hive.box<DownloadTask>(_taskBoxName);
     final taskId = const Uuid().v4();
@@ -71,10 +73,10 @@ class OfflineMapService {
 
     await box.put(taskId, task);
     _emitTasks();
-    _startDownload(task, urlTemplate);
+    _startDownload(task, urlTemplate, l10n);
   }
 
-  Future<void> _updateTotalProgressNotification() async {
+  Future<void> _updateTotalProgressNotification(AppLocalizations l10n) async {
     if (!Hive.isBoxOpen(_taskBoxName)) return;
 
     final box = Hive.box<DownloadTask>(_taskBoxName);
@@ -100,10 +102,12 @@ class OfflineMapService {
       progress: downloadedTilesAll,
       total: totalTilesAll,
       activeTasks: activeTasks.length,
+      l10n: l10n,
     );
   }
 
-  Future<void> _startDownload(DownloadTask task, String urlTemplate) async {
+  Future<void> _startDownload(
+      DownloadTask task, String urlTemplate, AppLocalizations l10n) async {
     task.status = TaskStatus.downloading;
     task.errorMessage = null;
     await task.save();
@@ -130,7 +134,7 @@ class OfflineMapService {
     int index = 0;
     int saveCounter = 0;
 
-    _updateTotalProgressNotification();
+    _updateTotalProgressNotification(l10n);
 
     try {
       while (index < tilesToDownload.length) {
@@ -163,7 +167,7 @@ class OfflineMapService {
             saveCounter++;
 
             if (task.downloadedTiles % 5 == 0) {
-              _updateTotalProgressNotification();
+              _updateTotalProgressNotification(l10n);
             }
 
             if (saveCounter >= 20 || task.downloadedTiles == task.totalTiles) {
@@ -197,7 +201,7 @@ class OfflineMapService {
       _emitTasks();
     } finally {
       _cancelTokens.remove(task.id);
-      _updateTotalProgressNotification();
+      _updateTotalProgressNotification(l10n);
     }
   }
 
@@ -285,9 +289,10 @@ class OfflineMapService {
     }
   }
 
-  Future<void> resumeTask(DownloadTask task, String urlTemplate) async {
+  Future<void> resumeTask(
+      DownloadTask task, String urlTemplate, AppLocalizations l10n) async {
     if (task.status == TaskStatus.downloading) return;
-    _startDownload(task, urlTemplate);
+    _startDownload(task, urlTemplate, l10n);
   }
 
   List<DownloadTask> getAllTasks() {

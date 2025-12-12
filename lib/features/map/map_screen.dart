@@ -12,6 +12,7 @@ import 'package:triggeo/core/services/service_locator.dart';
 import 'package:triggeo/data/repositories/settings_repository.dart';
 import 'package:triggeo/features/map/widgets/offline_tile_provider.dart';
 import 'package:triggeo/features/map/widgets/reminder_edit_dialog.dart';
+import 'package:triggeo/l10n/app_localizations.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
   const MapScreen({super.key});
@@ -76,8 +77,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('搜索失败: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(
+                AppLocalizations.of(context)!.mapSearchFailed(e.toString()))));
       }
     } finally {
       setState(() => _isSearching = false);
@@ -94,8 +96,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   }
 
   Future<void> _centerToCurrentLocation() async {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text('正在定位...')));
+    ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context)!.mapLocating)));
     try {
       final locationService = ref.read(locationServiceProvider);
       final pos = await locationService.getCurrentPosition();
@@ -106,8 +108,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('定位失败: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(AppLocalizations.of(context)!
+                .mapLocationFailed(e.toString()))));
       }
     }
   }
@@ -119,8 +122,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     ref.listen(currentLocationProvider, (previous, next) {
       if (next.value != null) {
         final newLoc = LatLng(next.value!['lat'], next.value!['lng']);
-        if (_currentLatLng == null || 
-            newLoc.latitude != _currentLatLng!.latitude || 
+        if (_currentLatLng == null ||
+            newLoc.latitude != _currentLatLng!.latitude ||
             newLoc.longitude != _currentLatLng!.longitude) {
           _updateLocation(newLoc);
         }
@@ -213,7 +216,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                         child: TextField(
                           controller: _searchController,
                           decoration: InputDecoration(
-                            hintText: "搜索地点...",
+                            hintText:
+                                AppLocalizations.of(context)!.mapSearchHint,
                             prefixIcon: Icon(Icons.search,
                                 color: Theme.of(context).colorScheme.onSurface),
                             suffixIcon: _isSearching
@@ -237,6 +241,12 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                                       setState(() => _searchResults = []);
                                     },
                                   ),
+                            errorText: _searchController.text.isEmpty &&
+                                    _searchResults.isNotEmpty &&
+                                    !_isSearching
+                                ? AppLocalizations.of(context)!
+                                    .mapSearchEmptyError
+                                : null,
                             border: InputBorder.none,
                             contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 20, vertical: 15),
@@ -277,6 +287,11 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                       itemCount: _searchResults.length,
                       itemBuilder: (context, index) {
                         final place = _searchResults[index];
+                        if (place.isEmpty) {
+                      return Center(
+                        child: Text(AppLocalizations.of(context)!.mapNoSearchResults), // <--- REPLACE
+                      );
+                    }
                         return ListTile(
                           title: Text(place['display_name'].split(',')[0],
                               style: TextStyle(

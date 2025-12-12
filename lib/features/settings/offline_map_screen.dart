@@ -5,6 +5,7 @@ import 'package:triggeo/core/services/offline_map_service.dart';
 import 'package:triggeo/core/services/service_locator.dart';
 import 'package:triggeo/data/models/download_task.dart';
 import 'package:triggeo/data/repositories/settings_repository.dart';
+import 'package:triggeo/l10n/app_localizations.dart';
 
 class OfflineMapScreen extends ConsumerStatefulWidget {
   const OfflineMapScreen({super.key});
@@ -44,10 +45,11 @@ class _OfflineMapScreenState extends ConsumerState<OfflineMapScreen>
       minZoom: minZ,
       maxZoom: maxZ,
       urlTemplate: urlTemplate,
+      l10n: AppLocalizations.of(context)!,
     );
 
-    ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text("已加入下载队列")));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(AppLocalizations.of(context)!.offlineMapAddedToQueue)));
     _tabController.animateTo(1);
   }
 
@@ -55,17 +57,33 @@ class _OfflineMapScreenState extends ConsumerState<OfflineMapScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("离线地图管理"),
+        title: Text(AppLocalizations.of(context)!.offlineMapTitle),
         bottom: TabBar(
           controller: _tabController,
-          tabs: const [Tab(text: "下载新地图"), Tab(text: "任务与已下载")],
+          tabs: [
+            Tab(text: AppLocalizations.of(context)!.offlineMapTabNew),
+            Tab(text: AppLocalizations.of(context)!.offlineMapTabTasks)
+          ],
         ),
       ),
       body: FutureBuilder(
         future: _initFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return Center(
+              child: Column(
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text(AppLocalizations.of(context)!.offlineMapLoadingData),
+                ],
+              ),
+            );
+          }
+          if (snapshot.hasError) {
+            return Center(
+                child: Text(AppLocalizations.of(context)!
+                    .offlineMapLoadFailed(snapshot.error!)));
           }
 
           return TabBarView(
@@ -81,37 +99,49 @@ class _OfflineMapScreenState extends ConsumerState<OfflineMapScreen>
                         Expanded(
                           child: TextField(
                             controller: _searchCtrl,
-                            decoration: const InputDecoration(
-                              hintText: "输入城市名称 (如: 北京, 上海)",
-                              border: OutlineInputBorder(),
-                              suffixIcon: Icon(Icons.search),
+                            decoration: InputDecoration(
+                              hintText: AppLocalizations.of(context)!
+                                  .offlineMapSearchHint,
+                              border: const OutlineInputBorder(),
+                              suffixIcon: const Icon(Icons.search),
                             ),
                             onSubmitted: (_) => _doSearch(),
                           ),
                         ),
                         const SizedBox(width: 8),
                         FilledButton(
-                            onPressed: _doSearch, child: const Text("搜索")),
+                            onPressed: _doSearch,
+                            child: Text(AppLocalizations.of(context)!
+                                .offlineMapSearchButton)),
                       ],
                     ),
                   ),
                   if (_isSearching) const LinearProgressIndicator(),
                   Expanded(
-                    child: ListView.builder(
-                      itemCount: _searchResults.length,
-                      itemBuilder: (context, index) {
-                        final item = _searchResults[index];
-                        return ListTile(
-                          title: Text(item['name'].split(',')[0],
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.bold)),
-                          subtitle: Text(item['name'],
-                              maxLines: 1, overflow: TextOverflow.ellipsis),
-                          trailing: const Icon(Icons.download),
-                          onTap: () => _startDownload(item),
-                        );
-                      },
-                    ),
+                    child: _isSearching
+                        ? Center(
+                            child: Text(AppLocalizations.of(context)!
+                                .offlineMapNoResults))
+                        : _searchResults.isEmpty
+                            ? Center(
+                                child: Text(AppLocalizations.of(context)!
+                                    .offlineMapNoResults))
+                            : ListView.builder(
+                                itemCount: _searchResults.length,
+                                itemBuilder: (context, index) {
+                                  final item = _searchResults[index];
+                                  return ListTile(
+                                    title: Text(item['name'].split(',')[0],
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.bold)),
+                                    subtitle: Text(item['name'],
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis),
+                                    trailing: const Icon(Icons.download),
+                                    onTap: () => _startDownload(item),
+                                  );
+                                },
+                              ),
                   ),
                 ],
               ),
@@ -122,7 +152,10 @@ class _OfflineMapScreenState extends ConsumerState<OfflineMapScreen>
                 initialData: _service.getAllTasks(),
                 builder: (context, snapshot) {
                   final tasks = snapshot.data ?? [];
-                  if (tasks.isEmpty) return const Center(child: Text("暂无下载任务"));
+                  if (tasks.isEmpty)
+                    return Center(
+                        child: Text(
+                            AppLocalizations.of(context)!.offlineMapNoTasks));
                   final reversedTasks = tasks.reversed.toList();
 
                   return ListView.builder(
@@ -163,27 +196,28 @@ class _OfflineMapScreenState extends ConsumerState<OfflineMapScreen>
       case TaskStatus.downloading:
         icon = Icons.downloading;
         color = Colors.blue;
-        statusText = "下载中 $percent%";
+        statusText =
+            AppLocalizations.of(context)!.offlineMapStatusDownloading(percent);
         break;
       case TaskStatus.completed:
         icon = Icons.check_circle;
         color = Colors.green;
-        statusText = "已完成";
+        statusText = AppLocalizations.of(context)!.offlineMapStatusCompleted;
         break;
       case TaskStatus.failed:
         icon = Icons.error;
         color = Colors.red;
-        statusText = "失败";
+        statusText = AppLocalizations.of(context)!.offlineMapStatusFailed;
         break;
       case TaskStatus.pending:
         icon = Icons.schedule;
         color = Colors.orange;
-        statusText = "等待中";
+        statusText = AppLocalizations.of(context)!.offlineMapStatusPending;
         break;
       default:
         icon = Icons.pause;
         color = Colors.grey;
-        statusText = "已停止";
+        statusText = AppLocalizations.of(context)!.offlineMapStatusPaused;
     }
 
     return Card(
@@ -210,7 +244,8 @@ class _OfflineMapScreenState extends ConsumerState<OfflineMapScreen>
                       final url = ref
                           .read(settingsRepositoryProvider)
                           .getCurrentTileUrl();
-                      _service.resumeTask(task, url);
+                      _service.resumeTask(
+                          task, url, AppLocalizations.of(context)!);
                     },
                   ),
                 if (task.status == TaskStatus.completed)
