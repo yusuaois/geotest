@@ -36,7 +36,8 @@ flutter pub get
 flutter run
 ```
 
-> **提示**：iOS 需要配置 `Info.plist` 定位权限，Android 需要设置 `AndroidManifest.xml` 中的权限。
+> **提示**：iOS 需要配置 `Info.plist` 定位权限，Android 需要设置 `AndroidManifest.xml` 中的权限。  
+> **注意**：项目使用 Flutter 3.8.0+ 构建，请注意您的开发环境问题。
 
 ---
 

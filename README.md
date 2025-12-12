@@ -37,6 +37,7 @@ flutter run
 ```
 
 > **Note**: iOS requires location permission configuration in `Info.plist`, Android requires setting up permissions in `AndroidManifest.xml`.
+> **Note**: The project uses Flutter 3.8.0+ to build, please note your development environment issues.
 
 ---
 
