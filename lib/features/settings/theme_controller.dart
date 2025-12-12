@@ -67,7 +67,7 @@ class ThemeController extends Notifier<ThemeState> {
 
   void setCustomSeedColor(Color color) {
     state = state.copyWith(customSeedColor: color);
-    Hive.box(_boxName).put(_keyColor, color.value);
+    Hive.box(_boxName).put(_keyColor, color.toARGB32());
   }
 }
 

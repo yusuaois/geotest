@@ -1,10 +1,9 @@
-name: Flutter CI/CD Build
-
+name: Flutter Build
+# V 1.0.0
 on:
   push:
-    branches:
-      - main
-      - master
+    tags:
+      - "v*.*.*"
   workflow_dispatch:
 
 jobs:

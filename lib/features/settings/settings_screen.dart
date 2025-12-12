@@ -217,6 +217,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               Theme.of(context);
 
               return ListTile(
+                // TODO 搜索源 高德/百度
                 title: const Text("地图源"),
                 subtitle: Text(kTileSources[currentIndex].name),
                 trailing: PopupMenuButton<int>(
@@ -224,9 +225,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   onSelected: (index) async {
                     await settingsRepo.setTileSource(index);
                     setState(() {});
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("地图源已切换，重启应用生效")),
-                    );
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("地图源已切换，重启应用生效")),
+                      );
+                    
                   },
                   itemBuilder: (context) =>
                       List.generate(kTileSources.length, (index) {

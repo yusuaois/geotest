@@ -4,17 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
-import 'package:permission_handler/permission_handler.dart';
 import 'package:triggeo/core/constants/global_config.dart';
 import 'package:triggeo/core/services/service_locator.dart';
 import 'package:triggeo/data/repositories/settings_repository.dart';
 import 'package:triggeo/features/map/widgets/offline_tile_provider.dart';
 import 'package:triggeo/features/map/widgets/reminder_edit_dialog.dart';
-import 'map_controller.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
   const MapScreen({super.key});
@@ -30,6 +27,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   bool _isSearching = false;
   bool _hasAutoCentered = false;
 
+  LatLng? _currentLatLng;
+
   @override
   void initState() {
     super.initState();
@@ -42,12 +41,24 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   Future<void> _initLocation() async {
     final locationService = ref.read(locationServiceProvider);
 
+    await locationService.startService();
+
     final initialPos = await locationService.getCurrentPosition();
 
     if (initialPos != null && mounted) {
-      _mapController.move(LatLng(initialPos['lat'], initialPos['lng']), 15.0);
-      _hasAutoCentered = true;
+      final latLng = LatLng(initialPos['lat'], initialPos['lng']);
+      _updateLocation(latLng, isInitial: true);
     }
+  }
+
+  void _updateLocation(LatLng latLng, {bool isInitial = false}) {
+    setState(() {
+      _currentLatLng = latLng;
+      if (!_hasAutoCentered) {
+        _hasAutoCentered = true;
+        _mapController.move(latLng, 15.0);
+      }
+    });
   }
 
   Future<void> _searchPlaces(String query) async {
@@ -64,8 +75,10 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         });
       }
     } catch (e) {
-      ScaffoldMessenger.of(context)
+      if (mounted) {
+        ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('搜索失败: $e')));
+      }
     } finally {
       setState(() => _isSearching = false);
     }
@@ -84,34 +97,35 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     ScaffoldMessenger.of(context)
         .showSnackBar(const SnackBar(content: Text('正在定位...')));
     try {
-      final pos = await Geolocator.getCurrentPosition();
-      _mapController.move(LatLng(pos.latitude, pos.longitude), 15.0);
+      final locationService = ref.read(locationServiceProvider);
+      final pos = await locationService.getCurrentPosition();
+      if (pos != null && mounted) {
+        final latLng = LatLng(pos['lat'], pos['lng']);
+        _updateLocation(latLng);
+        _mapController.move(latLng, 15.0);
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('定位失败: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('定位失败: $e')));
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final locationAsync = ref.watch(currentLocationProvider);
-    ref.watch(mapControllerProvider);
     final tileUrl = ref.watch(tileUrlProvider);
 
-    LatLng? userLatLng;
-    if (locationAsync.value != null) {
-      userLatLng = LatLng(
-        locationAsync.value!['lat'],
-        locationAsync.value!['lng'],
-      );
-    }
-
-    if (!_hasAutoCentered && userLatLng != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _mapController.move(userLatLng!, 15.0);
-      });
-      _hasAutoCentered = true;
-    }
+    ref.listen(currentLocationProvider, (previous, next) {
+      if (next.value != null) {
+        final newLoc = LatLng(next.value!['lat'], next.value!['lng']);
+        if (_currentLatLng == null || 
+            newLoc.latitude != _currentLatLng!.latitude || 
+            newLoc.longitude != _currentLatLng!.longitude) {
+          _updateLocation(newLoc);
+        }
+      }
+    });
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
@@ -144,23 +158,36 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               ),
               MarkerLayer(
                 markers: [
-                  if (userLatLng != null)
+                  if (_currentLatLng != null)
                     Marker(
-                      point: userLatLng,
+                      point: _currentLatLng!,
                       width: 40,
                       height: 40,
-                      key: const ValueKey('userLocationMarker'),
-                      child: Container(
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(blurRadius: 5, color: Colors.black26)
-                          ],
-                        ),
-                        child: Icon(Icons.navigation,
-                            color: Theme.of(context).colorScheme.primary,
-                            size: 25),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.5),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                              border: Border.all(color: Colors.white, width: 2),
+                            ),
+                          ),
+                          const Icon(
+                            Icons.navigation,
+                            color: Colors.blueAccent,
+                            size: 24,
+                          ),
+                        ],
                       ),
                     ),
                 ],
@@ -225,7 +252,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                       onPressed: () => context.push('/settings'),
                       style: IconButton.styleFrom(
                         backgroundColor: Theme.of(context).colorScheme.surface,
-                        elevation: 2,
+                        elevation: 4,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(30),
                         ),

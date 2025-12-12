@@ -67,6 +67,7 @@ void onStart(ServiceInstance service) async {
   Geolocator.getPositionStream(
     locationSettings: const LocationSettings(
       accuracy: LocationAccuracy.high,
+      // TODO 设置中调整位置更新频率
       distanceFilter: 10,
     ),
   ).listen((Position position) async {
@@ -109,6 +110,7 @@ void onStart(ServiceInstance service) async {
 
           // B. Vibration
           if (reminderTypeIndex == 1 || reminderTypeIndex == 2) {
+            // TODO 设置中调整震动模式
             if (await Vibration.hasVibrator()) {
               Vibration.vibrate(pattern: [
                 0,
@@ -186,20 +188,25 @@ class LocationService {
     );
   }
 
-Future<bool> requestPermission() async {
+  Future<bool> requestPermission() async {
     final status = await Permission.location.status;
     if (!status.isGranted) {
       final result = await Permission.location.request();
       return result.isGranted;
     }
     return true;
-}
+  }
 
-  Future<void> startService() async {
+  Future<bool> startService() async {
     final hasPermission = await requestPermission();
     if (hasPermission) {
-      await service.startService();
-  }
+      final isRunning = await service.isRunning();
+      if (!isRunning) {
+        await service.startService();
+      }
+      return true;
+    }
+    return false;
   }
 
   Future<Map<String, dynamic>?> getCurrentPosition() async {
@@ -210,7 +217,12 @@ Future<bool> requestPermission() async {
       Position? position = await Geolocator.getLastKnownPosition();
 
       position ??= await Geolocator.getCurrentPosition(
-        timeLimit: const Duration(seconds: 5),
+        locationSettings: const LocationSettings(
+          // 定位精度
+          accuracy: LocationAccuracy.high,
+          // 超时设置
+          timeLimit: Duration(seconds: 20),
+        ),
       );
 
       return {
@@ -228,25 +240,35 @@ Future<bool> requestPermission() async {
   }
 
   Stream<Map<String, dynamic>?> get locationStream {
-    // Future to Stream
-    final Stream<Map<String, dynamic>?> cachedStream = Stream.fromFuture(
-      Geolocator.getLastKnownPosition(),
-    ).map((position) {
-      if (position != null) {
-        debugPrint("LocationService: Used cached location");
+    final Stream<Map<String, dynamic>?> initialStream =
+        Stream.fromFuture(() async {
+      try {
+        Position? pos = await Geolocator.getLastKnownPosition();
+
+        pos = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            timeLimit: Duration(seconds: 20),
+          ),
+        );
+
+        debugPrint(
+            "LocationService: Emitting initial location from Foreground");
         return {
-          "lat": position.latitude,
-          "lng": position.longitude,
-          "source": "cached"
+          "lat": pos.latitude,
+          "lng": pos.longitude,
+          "source": "initial_fetch"
         };
+      } catch (e) {
+        debugPrint("Stream initial fetch failed: $e");
       }
       return null;
-    }).where((data) => data != null); // Filter out null values
+    }())
+            .where((data) => data != null);
 
     final Stream<Map<String, dynamic>?> liveStream = service.on('update');
 
-    // cachedStream first，then liveStream
-    return Rx.concat([cachedStream, liveStream]);
+    return Rx.merge([initialStream, liveStream]);
   }
 }
 

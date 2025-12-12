@@ -84,6 +84,10 @@ class TriggeoApp extends ConsumerWidget {
           theme: ThemeData(
             useMaterial3: true,
             colorScheme: lightScheme,
+            bottomAppBarTheme: const BottomAppBarThemeData(
+              color: Colors.transparent,
+              elevation: 0,
+            ),
             // Global AppBar Theme
             appBarTheme: AppBarTheme(
               centerTitle: true,
