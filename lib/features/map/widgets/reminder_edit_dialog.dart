@@ -51,8 +51,9 @@ class _ReminderEditDialogState extends ConsumerState<ReminderEditDialog> {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content:
-                  Text(widget.existingReminder == null ? AppLocalizations.of(context)!.reminderCreated : AppLocalizations.of(context)!.reminderUpdated)),
+              content: Text(widget.existingReminder == null
+                  ? AppLocalizations.of(context)!.reminderCreated
+                  : AppLocalizations.of(context)!.reminderUpdated)),
         );
       }
     }
@@ -97,12 +98,15 @@ class _ReminderEditDialogState extends ConsumerState<ReminderEditDialog> {
                   hintText: AppLocalizations.of(context)!.reminderNameHint,
                   border: const OutlineInputBorder(),
                 ),
-                validator: (val) => val == null || val.isEmpty ? AppLocalizations.of(context)!.reminderNameRequired : null,
+                validator: (val) => val == null || val.isEmpty
+                    ? AppLocalizations.of(context)!.reminderNameRequired
+                    : null,
               ),
               const SizedBox(height: 16),
 
               // Radius slider
-              Text(AppLocalizations.of(context)!.reminderRadiusText(_radius.toInt())),
+              Text(AppLocalizations.of(context)!
+                  .reminderRadiusText(_radius.toInt())),
               Slider(
                 value: _radius,
                 min: 100,

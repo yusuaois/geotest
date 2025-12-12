@@ -4,7 +4,7 @@ import 'package:latlong2/latlong.dart';
 
 part 'offline_region.g.dart';
 
-@HiveType(typeId: 2) 
+@HiveType(typeId: 2)
 class OfflineRegion extends HiveObject {
   @HiveField(0)
   final String id;
@@ -43,8 +43,6 @@ class OfflineRegion extends HiveObject {
     required this.downloadDate,
   });
 
-  LatLngBounds get bounds => LatLngBounds(
-    LatLng(maxLat, minLon), 
-    LatLng(minLat, maxLon)
-  );
+  LatLngBounds get bounds =>
+      LatLngBounds(LatLng(maxLat, minLon), LatLng(minLat, maxLon));
 }

@@ -17,6 +17,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String mapGetLocationFailed(Object error) {
+    return ' Get location failed: $error';
+  }
+
+  @override
   String get mapLocating => 'Locating...';
 
   @override
@@ -88,10 +93,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsReminderBoth => 'Ring & Vibrate';
 
   @override
+  String get settingsReminderVibrationNotSupport =>
+      'Vibration is not supported on this device';
+
+  @override
   String get settingsCustomRingtone => 'Custom Reminder Ringtone';
 
   @override
   String get settingsPickRingtone => 'Tap to select audio file';
+
+  @override
+  String settingsRintoneFileNotFound(Object filePath) {
+    return 'Unable to play audio, file not found: $filePath';
+  }
+
+  @override
+  String settingsRintonePlayFiled(Object error) {
+    return 'Unable to play audio: $error';
+  }
 
   @override
   String get settingsTestSetting => 'Test Setting';

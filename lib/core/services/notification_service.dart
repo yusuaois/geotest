@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'dart:io';
 import 'package:permission_handler/permission_handler.dart';
@@ -14,7 +13,7 @@ class NotificationService {
   static const String channelIdDownload = 'triggeo_download_progress';
   static const int _downloadNotificationId = 777;
 
-  Future<void> initialize() async {
+  Future<void> initialize(dynamic l10n) async {
     await _requestNotificationPermissions();
 
     // Android
@@ -39,25 +38,25 @@ class NotificationService {
 
     await _createNotificationChannel(
       channelIdBackground,
-      '后台运行服务',
-      '保持应用在后台检测位置',
+      l10n.notificationChannelBackgroundName,
+      l10n.notificationChannelBackgroundDesc,
       Importance.low,
     );
 
     await _createNotificationChannel(
       channelIdAlert,
-      '位置到达提醒',
-      '当到达目的地时发出提醒',
+      l10n.notificationChannelAlertName,
+        l10n.notificationChannelAlertDesc,
       Importance.max,
       playSound: true,
     );
 
     if (Platform.isAndroid) {
-      const AndroidNotificationChannel downloadChannel =
+      final AndroidNotificationChannel downloadChannel =
           AndroidNotificationChannel(
         channelIdDownload,
-        '地图下载进度',
-        description: '显示离线地图下载的进度',
+        l10n.notificationChannelDownloadName,
+        description: l10n.notificationChannelDownloadDesc,
         importance: Importance.low,
         playSound: false,
         enableVibration: false,

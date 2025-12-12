@@ -110,6 +110,12 @@ abstract class AppLocalizations {
   /// **'Search failed: {error}'**
   String mapSearchFailed(Object error);
 
+  /// No description provided for @mapGetLocationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **' Get location failed: {error}'**
+  String mapGetLocationFailed(Object error);
+
   /// No description provided for @mapLocating.
   ///
   /// In en, this message translates to:
@@ -242,6 +248,12 @@ abstract class AppLocalizations {
   /// **'Ring & Vibrate'**
   String get settingsReminderBoth;
 
+  /// No description provided for @settingsReminderVibrationNotSupport.
+  ///
+  /// In en, this message translates to:
+  /// **'Vibration is not supported on this device'**
+  String get settingsReminderVibrationNotSupport;
+
   /// No description provided for @settingsCustomRingtone.
   ///
   /// In en, this message translates to:
@@ -253,6 +265,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tap to select audio file'**
   String get settingsPickRingtone;
+
+  /// No description provided for @settingsRintoneFileNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to play audio, file not found: {filePath}'**
+  String settingsRintoneFileNotFound(Object filePath);
+
+  /// No description provided for @settingsRintonePlayFiled.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to play audio: {error}'**
+  String settingsRintonePlayFiled(Object error);
 
   /// No description provided for @settingsTestSetting.
   ///

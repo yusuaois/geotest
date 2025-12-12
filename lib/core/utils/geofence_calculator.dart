@@ -9,18 +9,9 @@ class GeofenceCalculator {
     return distance(point1, point2);
   }
 
-  /// Format distance for display
-  static String formatDistance(double meters) {
-    if (meters < 1000) {
-      return '${meters.toStringAsFixed(0)} 米';
-    } else {
-      double km = meters / 1000;
-      return '${km.toStringAsFixed(2)} 公里';
-    }
-  }
-
-  static bool isInRadius(LatLng userLocation, LatLng targetLocation, double radiusMeters) {
+  static bool isInRadius(
+      LatLng userLocation, LatLng targetLocation, double radiusMeters) {
     final dist = calculateDistance(userLocation, targetLocation);
-    return dist <= (radiusMeters + 5); 
+    return dist <= (radiusMeters + 5);
   }
 }

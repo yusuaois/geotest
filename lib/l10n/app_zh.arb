@@ -8,6 +8,12 @@
             "error": {}
         }
     },
+    "mapGetLocationFailed": "获取位置失败: {error}",
+    "@mapGetLocationFailed": {
+        "placeholders": {
+            "error": {}
+        }
+    },
     "mapLocating": "正在定位...",
     "mapSearchHint": "搜索地点",
     "mapSearchEmptyError": "请输入搜索关键词",
@@ -41,8 +47,21 @@
     "settingsReminderRingtone": "响铃",
     "settingsReminderVibration": "震动",
     "settingsReminderBoth": "响铃与震动",
+    "settingsReminderVibrationNotSupport": "当前设备不支持震动",
     "settingsCustomRingtone": "自定义提醒铃声",
     "settingsPickRingtone": "点击选择音频文件",
+    "settingsRintoneFileNotFound": "路径为 {filePath} 的音频文件不存在",
+    "@settingsRintoneFileNotFound": {
+      "placeholders": {
+            "filePath": {}
+        }
+    },
+    "settingsRintonePlayFiled": "播放音频文件失败，错误信息: {error}",
+    "@settingsRintonePlayFiled": {
+      "placeholders": {
+            "error": {}
+        }
+    },
     "settingsTestSetting": "测试当前设置",
     "settingsMapDataSection": "地图与数据",
     "settingsOfflineMap": "离线地图",

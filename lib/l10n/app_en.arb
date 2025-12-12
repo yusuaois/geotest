@@ -8,6 +8,12 @@
             "error": {}
         }
     },
+    "mapGetLocationFailed":" Get location failed: {error}",
+    "@mapGetLocationFailed": {
+        "placeholders": {
+            "error": {}
+        }
+    },
     "mapLocating": "Locating...",
     "mapSearchHint": "Search location",
     "mapSearchEmptyError": "Please enter search keywords",
@@ -41,8 +47,21 @@
     "settingsReminderRingtone": "Ring",
     "settingsReminderVibration": "Vibrate",
     "settingsReminderBoth": "Ring & Vibrate",
+    "settingsReminderVibrationNotSupport": "Vibration is not supported on this device",
     "settingsCustomRingtone": "Custom Reminder Ringtone",
     "settingsPickRingtone": "Tap to select audio file",
+    "settingsRintoneFileNotFound": "Unable to play audio, file not found: {filePath}",
+    "@settingsRintoneFileNotFound": {
+      "placeholders": {
+            "filePath": {}
+        }
+    },
+    "settingsRintonePlayFiled": "Unable to play audio: {error}",
+    "@settingsRintonePlayFiled": {
+      "placeholders": {
+            "error": {}
+        }
+    },
     "settingsTestSetting": "Test Setting",
     "settingsMapDataSection": "Map & Data",
     "settingsOfflineMap": "Offline Maps",

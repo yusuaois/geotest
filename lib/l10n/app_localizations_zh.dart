@@ -17,6 +17,11 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String mapGetLocationFailed(Object error) {
+    return '获取位置失败: $error';
+  }
+
+  @override
   String get mapLocating => '正在定位...';
 
   @override
@@ -87,10 +92,23 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsReminderBoth => '响铃与震动';
 
   @override
+  String get settingsReminderVibrationNotSupport => '当前设备不支持震动';
+
+  @override
   String get settingsCustomRingtone => '自定义提醒铃声';
 
   @override
   String get settingsPickRingtone => '点击选择音频文件';
+
+  @override
+  String settingsRintoneFileNotFound(Object filePath) {
+    return '路径为 $filePath 的音频文件不存在';
+  }
+
+  @override
+  String settingsRintonePlayFiled(Object error) {
+    return '播放音频文件失败，错误信息: $error';
+  }
 
   @override
   String get settingsTestSetting => '测试当前设置';

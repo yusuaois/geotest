@@ -4,24 +4,30 @@ import 'package:latlong2/latlong.dart';
 
 part 'download_task.g.dart';
 
-@HiveType(typeId: 3) 
+@HiveType(typeId: 3)
 enum TaskStatus {
-  @HiveField(0) pending,
-  @HiveField(1) downloading,
-  @HiveField(2) paused,
-  @HiveField(3) completed,
-  @HiveField(4) failed,
-  @HiveField(5) canceled
+  @HiveField(0)
+  pending,
+  @HiveField(1)
+  downloading,
+  @HiveField(2)
+  paused,
+  @HiveField(3)
+  completed,
+  @HiveField(4)
+  failed,
+  @HiveField(5)
+  canceled
 }
 
 @HiveType(typeId: 4)
 class DownloadTask extends HiveObject {
   @HiveField(0)
-  final String id; 
-  
+  final String id;
+
   @HiveField(1)
   final String regionName;
-  
+
   @HiveField(2)
   final double minLat;
   @HiveField(3)
@@ -30,7 +36,7 @@ class DownloadTask extends HiveObject {
   final double minLon;
   @HiveField(5)
   final double maxLon;
-  
+
   @HiveField(6)
   final int minZoom;
   @HiveField(7)
@@ -63,10 +69,8 @@ class DownloadTask extends HiveObject {
     this.errorMessage,
   });
 
-  LatLngBounds get bounds => LatLngBounds(
-    LatLng(maxLat, minLon), 
-    LatLng(minLat, maxLon)
-  );
-  
+  LatLngBounds get bounds =>
+      LatLngBounds(LatLng(maxLat, minLon), LatLng(minLat, maxLon));
+
   double get progress => totalTiles == 0 ? 0 : downloadedTiles / totalTiles;
 }

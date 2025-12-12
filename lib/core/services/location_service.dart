@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:geolocator/geolocator.dart';
@@ -21,7 +20,8 @@ import 'package:triggeo/core/utils/geofence_calculator.dart';
 import 'package:triggeo/core/services/notification_service.dart';
 
 @pragma('vm:entry-point')
-void onStart(ServiceInstance service, AppLocalizations l10n) async {
+void onStart(ServiceInstance service, AppLocalizations l10n,
+    BuildContext context) async {
   DartPluginRegistrant.ensureInitialized();
 
   await Hive.initFlutter();
@@ -62,7 +62,9 @@ void onStart(ServiceInstance service, AppLocalizations l10n) async {
     service.invoke('update',
         {"lat": initialPosition.latitude, "lng": initialPosition.longitude});
   } catch (e) {
-    debugPrint("后台服务获取初始位置失败: $e");
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(l10n.mapGetLocationFailed(e))));
+    debugPrint("BackgroundService: $e");
   }
 
   Geolocator.getPositionStream(
@@ -146,7 +148,10 @@ void onStart(ServiceInstance service, AppLocalizations l10n) async {
                 await audioPlayer.stop();
                 await audioPlayer.play(DeviceFileSource(customRingtonePath));
               } catch (e) {
-                debugPrint("后台播放失败: $e");
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text(l10n.settingsRintonePlayFiled(e)),
+                ));
+                debugPrint("AudioPlayer Error: $e");
               }
             }
           }
@@ -170,10 +175,10 @@ void onStart(ServiceInstance service, AppLocalizations l10n) async {
 class LocationService {
   final service = FlutterBackgroundService();
 
-  Future<void> initialize(AppLocalizations l10n) async {
+  Future<void> initialize(AppLocalizations l10n, BuildContext context) async {
     await service.configure(
       androidConfiguration: AndroidConfiguration(
-        onStart: (ServiceInstance service) => onStart(service, l10n),
+        onStart: (ServiceInstance service) => onStart(service, l10n, context),
         autoStart: false,
         isForegroundMode: true,
         notificationChannelId: NotificationService.channelIdBackground,
@@ -183,7 +188,8 @@ class LocationService {
       ),
       iosConfiguration: IosConfiguration(
         autoStart: false,
-        onForeground: (ServiceInstance service) => onStart(service, l10n),
+        onForeground: (ServiceInstance service) =>
+            onStart(service, l10n, context),
         onBackground: onIosBackground,
       ),
     );
@@ -210,7 +216,7 @@ class LocationService {
     return false;
   }
 
-  Future<Map<String, dynamic>?> getCurrentPosition() async {
+  Future<Map<String, dynamic>?> getCurrentPosition(BuildContext context) async {
     bool hasPermission = await requestPermission();
     if (!hasPermission) return null;
 
@@ -229,6 +235,9 @@ class LocationService {
         "lng": position.longitude,
       };
     } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(AppLocalizations.of(context)!.mapGetLocationFailed(e)),
+      ));
       debugPrint("Error getting current location: $e");
       return null;
     }
@@ -250,9 +259,6 @@ class LocationService {
             timeLimit: Duration(seconds: 20),
           ),
         );
-
-        debugPrint(
-            "LocationService: Emitting initial location from Foreground");
         return {
           "lat": pos.latitude,
           "lng": pos.longitude,

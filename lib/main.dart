@@ -33,10 +33,6 @@ void main() async {
   // Open the settings box
   await Hive.openBox('settings_box');
 
-  // Initialize services
-  final notificationService = NotificationService();
-  await notificationService.initialize();
-
   final docDir = await getApplicationDocumentsDirectory();
   globalOfflineMapsDir = '${docDir.path}/offline_maps';
 
@@ -121,8 +117,11 @@ class _TriggeoAppState extends ConsumerState<TriggeoApp> {
           builder: (context, child) {
             WidgetsBinding.instance.addPostFrameCallback((_) async {
               final l10n = AppLocalizations.of(context)!;
+              // Notification Service Initialization
+              final notificationService = NotificationService();
+              await notificationService.initialize(l10n);
               // Location Service Initialization
-              await _locationService.initialize(l10n);
+              await _locationService.initialize(l10n, context);
               await _locationService.requestPermission();
             });
             return child!;

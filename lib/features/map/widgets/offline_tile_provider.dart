@@ -5,7 +5,7 @@ import 'package:hive/hive.dart';
 import 'package:triggeo/data/models/offline_region.dart';
 
 class OfflineTileProvider extends TileProvider {
-  final String offlineMapsDir; 
+  final String offlineMapsDir;
   List<OfflineRegion>? _regions;
 
   OfflineTileProvider({required this.offlineMapsDir}) {
@@ -22,15 +22,17 @@ class OfflineTileProvider extends TileProvider {
   ImageProvider getImage(TileCoordinates coordinates, TileLayer options) {
     if (_regions != null) {
       for (var region in _regions!) {
-        if (coordinates.z >= region.minZoom && coordinates.z <= region.maxZoom) {
-           // offline_maps/ID/z/x/y.png
-           final path = '$offlineMapsDir/${region.id}/${coordinates.z}/${coordinates.x}/${coordinates.y}.png';
-           final file = File(path);
-           
-           // sync check
-           if (file.existsSync()) {
-             return FileImage(file);
-           }
+        if (coordinates.z >= region.minZoom &&
+            coordinates.z <= region.maxZoom) {
+          // offline_maps/ID/z/x/y.png
+          final path =
+              '$offlineMapsDir/${region.id}/${coordinates.z}/${coordinates.x}/${coordinates.y}.png';
+          final file = File(path);
+
+          // sync check
+          if (file.existsSync()) {
+            return FileImage(file);
+          }
         }
       }
     }
@@ -40,7 +42,7 @@ class OfflineTileProvider extends TileProvider {
         .replaceAll('{x}', coordinates.x.toString())
         .replaceAll('{y}', coordinates.y.toString())
         .replaceAll('{s}', 'a');
-        
+
     return NetworkImage(url, headers: {'User-Agent': 'TriggeoApp/1.0'});
   }
 }
