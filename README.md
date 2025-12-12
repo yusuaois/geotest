@@ -27,7 +27,7 @@ A **compact and elegant** map application that reminds you when entering preset 
 
 ```bash
 # Clone the project
-git clone https://github.com/yourname/triggeo.git
+git clone https://github.com/yusuaois/triggeo.git
 
 # Install dependencies
 flutter pub get

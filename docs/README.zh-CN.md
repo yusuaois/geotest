@@ -27,7 +27,7 @@
 
 ```bash
 # 克隆项目
-git clone https://github.com/yourname/triggeo.git
+git clone https://github.com/yusuaois/triggeo.git
 
 # 安装依赖
 flutter pub get
