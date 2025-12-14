@@ -1,45 +1,43 @@
-name: Flutter Build
-# V 1.0.0
+name: Flutter Build & Release
+
 on:
   push:
     tags:
-      - "v*.*.*"
-  workflow_dispatch:
+      - "v*"
 
 jobs:
   build:
-    runs-on: ubuntu-latest 
-
+    runs-on: ubuntu-latest
     steps:
-      - name: ⬇️ Checkout Repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: 🐦 Setup Flutter
+      - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.38.4'
           channel: 'stable'
 
-      - name: 📦 Get Dependencies
+      - name: Get Dependencies
         run: flutter pub get
 
-      - name: ⚙️ Run Code Generation (build_runner)
+      - name: Build Runner
         run: flutter pub run build_runner build --delete-conflicting-outputs
 
-      - name: 🏗️ Build Android APK
-        run: flutter build apk --release
-        
-      - name: ⬆️ Upload Release APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+      - name: Build APK & AAB
+        run: |
+          flutter build apk --release
+          flutter build appbundle --release
 
-      - name: 🏗️ Build Android AppBundle (AAB)
-        run: flutter build appbundle --release
-        
-      - name: ⬆️ Upload Release AAB
-        uses: actions/upload-artifact@v4
+      
+      - name: Rename Artifacts
+        run: |
+          mv build/app/outputs/flutter-apk/app-release.apk Triggeo_${{ github.ref_name }}.apk
+          mv build/app/outputs/bundle/release/app-release.aab Triggeo_${{ github.ref_name }}.aab
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: release-aab
-          path: build/app/outputs/bundle/release/app-release.aab
+          token: ${{ secrets.Release }}
+          files: Triggeo_v*.* 
+          generate_release_notes: false
