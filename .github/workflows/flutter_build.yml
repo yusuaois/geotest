@@ -3,7 +3,8 @@ name: Flutter Build & Release
 on:
   push:
     tags:
-      - "v*"
+      - "v*.*.*"
+  workflow_dispatch:
 
 jobs:
   build:
@@ -40,4 +41,5 @@ jobs:
         with:
           token: ${{ secrets.Release }}
           files: Triggeo_v*.* 
+          body_path: ./CHANGELOG.md
           generate_release_notes: false
