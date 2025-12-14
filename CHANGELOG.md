@@ -21,4 +21,4 @@
 ---
 
 > 此版本由 GitHub Actions 自动构建生成。
-> SHA: ${{ github.sha }}
+> SHA: __SHA__
