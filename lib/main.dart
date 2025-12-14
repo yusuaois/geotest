@@ -16,9 +16,6 @@ import 'core/services/location_service.dart';
 import 'features/settings/theme_controller.dart';
 import 'app_router.dart';
 
-// 全局 key 用于访问 MaterialApp 的 context
-final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
-
 void main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
@@ -55,50 +52,6 @@ class TriggeoApp extends ConsumerStatefulWidget {
 
 class _TriggeoAppState extends ConsumerState<TriggeoApp> {
   final LocationService _locationService = LocationService();
-  final NotificationService _notificationService = NotificationService();
-  bool _servicesInitialized = false;
-
-  @override
-  void initState() {
-    super.initState();
-    // 在应用启动后初始化服务
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initializeServices();
-    });
-  }
-
-  Future<void> _initializeServices() async {
-    if (_servicesInitialized) return;
-    
-    final BuildContext? context = navigatorKey.currentContext;
-    if (context == null) {
-      // 如果 context 还未就绪，稍后重试
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _initializeServices();
-      });
-      return;
-    }
-
-    try {
-      final l10n = AppLocalizations.of(context)!;
-      
-      // 初始化通知服务
-      await _notificationService.initialize(l10n);
-      
-      // 初始化位置服务
-      await _locationService.initialize(l10n, context);
-      await _locationService.requestPermission();
-      
-      _servicesInitialized = true;
-      
-      // 隐藏启动画面
-      FlutterNativeSplash.remove();
-    } catch (e) {
-      print('Service initialization error: $e');
-      // 重试
-      Future.delayed(const Duration(seconds: 1), _initializeServices);
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -127,7 +80,6 @@ class _TriggeoAppState extends ConsumerState<TriggeoApp> {
         }
 
         return MaterialApp.router(
-          navigatorKey: navigatorKey, // 添加全局 key
           title: 'Triggeo',
           theme: ThemeData(
             useMaterial3: true,
@@ -159,9 +111,21 @@ class _TriggeoAppState extends ConsumerState<TriggeoApp> {
             GlobalCupertinoLocalizations.delegate,
           ],
           supportedLocales: [
-            const Locale('zh', 'CN'), // Chinese
-            const Locale('en', 'US'), // English
+            Locale('zh', 'CN'), // Chinese
+            Locale('en', 'US'), // English
           ],
+          builder: (context, child) {
+            WidgetsBinding.instance.addPostFrameCallback((_) async {
+              final l10n = AppLocalizations.of(context)!;
+              // Notification Service Initialization
+              final notificationService = NotificationService();
+              await notificationService.initialize(l10n);
+              // Location Service Initialization
+              await _locationService.initialize(l10n, context);
+              await _locationService.requestPermission();
+            });
+            return child!;
+          },
           routerConfig: router,
         );
       },
